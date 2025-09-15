@@ -8,8 +8,8 @@
     <title>CuanQ - Produk</title>
     <link href="/css/global-font.css" rel="stylesheet">
     <style>
-        .table th:nth-child(4),
-        .table td:nth-child(4) {
+        .table th:nth-child(5),
+        .table td:nth-child(5) {
             width: 200px;
             text-align: left;
             border-left: 1px solid <?= VIOLET_ACCENT; ?>;
@@ -36,13 +36,14 @@
                             <th>No</th>
                             <th>Nama Produk</th>
                             <th>Harga Produk</th>
+                            <th>Status Promo</th>
                             <th>Action</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php if (empty($produk)): ?>
                             <tr class="no-data-row">
-                                <td colspan="4" class="no-data-cell">
+                                <td colspan="5" class="no-data-cell">
                                     <div class="no-data">
                                         <div class="no-data-icon">📊</div>
                                         <p>Tidak ada data.</p>
@@ -50,14 +51,29 @@
                                 </td>
                             </tr>
                         <?php else: ?>
-                            <?php foreach ($produk as $index => $produk): ?>
+                            <?php foreach ($produk as $index => $item): ?>
                                 <tr>
                                     <td><?= $index + 1 ?></td>
-                                    <td><?= esc($produk['produk']) ?></td>
+                                    <td><?= esc($item['nama_produk'] ?? $item['produk']) ?></td>
+                                    <td>Rp <?= number_format($item['harga_produk'] ?? 0, 0, ',', '.') ?></td>
+                                    <td>
+                                        <?php 
+                                        $hasPromo = !empty($item['promo_type']) && $item['promo_type'] !== 'none' && $item['promo_active'] == 1;
+                                        if ($hasPromo): 
+                                        ?>
+                                            <span class="promo-active">
+                                                🏷️ Aktif<br>
+                                                <small>Rp <?= number_format($item['harga_final'] ?? $item['harga_produk'], 0, ',', '.') ?></small>
+                                            </span>
+                                        <?php else: ?>
+                                            <span class="promo-inactive">➖ Tidak Ada Promo</span>
+                                        <?php endif; ?>
+                                    </td>
                                     <td>
                                         <div class="action-buttons">
-                                            <a href="/income-categories/edit/<?= $produk['id'] ?>" class="btn-edit">✏️ Edit</a>
-                                            <a href="/income-categories/delete/<?= $produk['id'] ?>" class="btn-delete">🗑️ Delete</a>
+                                            <a onclick="openPromoModal(<?= $item['id'] ?>, '<?= esc($item['nama_produk'] ?? $item['produk']) ?>', <?= $item['harga_produk'] ?? 0 ?>)" class="btn-promo">🏷️ Promo</a>
+                                            <!-- <a href="/produk/edit/<?= $item['id'] ?>" class="btn-edit">✏️ Edit</a>
+                                            <a href="/produk/delete/<?= $item['id'] ?>" class="btn-delete">🗑️ Delete</a> -->
                                         </div>
                                     </td>
                                 </tr>
@@ -69,6 +85,7 @@
     </div>
 
     <?php include(APPPATH . 'Views/produk/modal-create.php'); ?>
+    <?php include(APPPATH . 'Views/produk/modal-promo.php'); ?>
     <?php include(APPPATH . 'Views/partials/snackbar.php'); ?>
 </body>
 </html>

@@ -91,36 +91,9 @@
                 const tbody = document.querySelector('.table tbody');
                 const noDataRow = tbody.querySelector('.no-data-row');
                 
-                if (noDataRow) {
-                    tbody.innerHTML = `
-                        <tr>
-                            <td>1</td>
-                            <td>${data.data.nama_produk}</td>
-                            <td>Rp ${parseInt(data.data.harga_produk).toLocaleString('id-ID')}</td>
-                            <td>
-                                <div class="action-buttons">
-                                    <a href="/produk/edit/${data.data.id}" class="btn-edit">✏️ Edit</a>
-                                    <a href="/produk/delete/${data.data.id}" class="btn-delete">🗑️ Delete</a>
-                                </div>
-                            </td>
-                        </tr>
-                    `;
-                } else {
-                    const rowCount = tbody.querySelectorAll('tr').length;
-                    const newRow = document.createElement('tr');
-                    newRow.innerHTML = `
-                        <td>${rowCount + 1}</td>
-                        <td>${data.data.nama_produk}</td>
-                        <td>Rp ${parseInt(data.data.harga_produk).toLocaleString('id-ID')}</td>
-                        <td>
-                            <div class="action-buttons">
-                                <a href="/produk/edit/${data.data.id}" class="btn-edit">✏️ Edit</a>
-                                <a href="/produk/delete/${data.data.id}" class="btn-delete">🗑️ Delete</a>
-                            </div>
-                        </td>
-                    `;
-                    tbody.appendChild(newRow);
-                }
+                setTimeout(() => {
+                    location.reload();
+                }, 500);
                 
                 showSnackbar('Produk Berhasil Ditambah!', 'success');
                 closeModal();

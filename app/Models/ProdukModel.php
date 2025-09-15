@@ -12,7 +12,9 @@ class ProdukModel extends Model
     protected $allowedFields = [
         'nama_produk',
         'harga_produk',
+        'harga_final',
         'promo_type',
+        'promo_value',
         'promo_active',
         'promo_start',
         'promo_end'

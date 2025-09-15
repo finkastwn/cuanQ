@@ -74,7 +74,7 @@
         gap: 8px;
     }
     
-    .btn-edit, .btn-delete {
+    .btn-edit, .btn-delete, .btn-promo {
         padding: 6px 12px;
         border-radius: 8px;
         cursor: pointer;
@@ -97,6 +97,31 @@
     .btn-delete:hover {
         background-color: <?= DANGER_DARK_COLOR; ?>;
         color: <?= WHITE; ?>;
+    }
+    
+    .btn-promo {
+        color: <?= MAIN_COLOR; ?>;
+    }
+    
+    .btn-promo:hover {
+        background-color: <?= MAIN_DARK_COLOR; ?>;
+        color: <?= WHITE; ?>;
+    }
+    
+    .promo-active {
+        color: #28a745;
+        font-weight: 600;
+        text-align: center;
+    }
+    
+    .promo-active small {
+        color: #28a745;
+        font-weight: 500;
+    }
+    
+    .promo-inactive {
+        color: #6c757d;
+        font-style: italic;
     }
     
     .no-data {
