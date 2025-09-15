@@ -26,7 +26,7 @@
                 <h1 class="page-title">Bahan Baku</h1>
                 <h2 class="page-subtitle">Kelola bahan bakumu disini!</h2>
             </div>
-            <a href="/bahan_baku/create" class="create-btn">Tambah Bahan Baku</a>
+            <a href="/bahan-baku/create" class="create-btn">Tambah Bahan Baku</a>
         </div>
         
         <div class="table-container">
@@ -54,15 +54,14 @@
                             <?php foreach ($bahan_baku as $index => $item): ?>
                                 <tr>
                                     <td><?= $index + 1 ?></td>
-                                    <td><?= esc($item['nama_bahan'] ?? $item['nama_bahan']) ?></td>
+                                    <td><?= esc($item['nama_bahan']) ?></td>
                                     <td>Rp <?= number_format($item['hpp'] ?? 0, 0, ',', '.') ?></td>
-                                    td><?= esc($item['stok'] ?? $item['stok']) ?></td>
+                                    <td><?= esc($item['stok'] ?? 0) ?></td>
                                     <td>
-                                        <!-- <div class="action-buttons">
-                                            <a onclick="openPromoModal(<?= $item['id'] ?>, '<?= esc($item['nama_produk'] ?? $item['produk']) ?>', <?= $item['harga_produk'] ?? 0 ?>)" class="btn-promo">🏷️ Promo</a>
-                                            <a onclick="openEditModal(<?= $item['id'] ?>, '<?= esc($item['nama_produk'] ?? $item['produk']) ?>', <?= $item['harga_produk'] ?? 0 ?>)" class="btn-edit">✏️ Edit</a>
-                                            <a onclick="deleteProduk(<?= $item['id'] ?>, '<?= esc($item['nama_produk'] ?? $item['produk']) ?>')" class="btn-delete">🗑️ Delete</a>
-                                        </div> -->
+                                        <div class="action-buttons">
+                                            <a onclick="openEditBahanBakuModal(<?= $item['id'] ?>, '<?= esc($item['nama_bahan']) ?>', <?= $item['hpp'] ?? 0 ?>, <?= $item['stok'] ?? 0 ?>)" class="btn-edit">✏️ Edit</a>
+                                            <a onclick="deleteBahanBaku(<?= $item['id'] ?>, '<?= esc($item['nama_bahan']) ?>')" class="btn-delete">🗑️ Delete</a>
+                                        </div>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>
@@ -74,16 +73,16 @@
 
     <?php include(APPPATH . 'Views/partials/snackbar.php'); ?>
     
-    <!-- <script>
-        function deleteProduk(productId, productName) {
-            if (!confirm(`Apakah Anda yakin ingin menghapus produk "${productName}"?\n\nTindakan ini tidak dapat dibatalkan.`)) {
+    <script>
+        function deleteBahanBaku(bahanBakuId, bahanBakuName) {
+            if (!confirm(`Apakah Anda yakin ingin menghapus bahan baku "${bahanBakuName}"?\n\nTindakan ini tidak dapat dibatalkan.`)) {
                 return;
             }
             
             const formData = new FormData();
-            formData.append('produk_id', productId);
+            formData.append('bahan_baku_id', bahanBakuId);
             
-            fetch('<?= base_url('produk/delete') ?>', {
+            fetch('<?= base_url('bahan-baku/delete') ?>', {
                 method: 'POST',
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest',
@@ -94,15 +93,19 @@
             .then(res => res.json())
             .then(data => {
                 if (data.status === 'success') {
-                    showSnackbar('Produk Berhasil Dihapus!', 'success');
+                    showSnackbar('Bahan Baku Berhasil Dihapus!', 'success');
                     setTimeout(() => {
                         location.reload();
                     }, 500);
                 } else {
-                    showSnackbar(data.message || 'Gagal Menghapus Produk', 'error');
+                    showSnackbar(data.message || 'Gagal Menghapus Bahan Baku', 'error');
                 }
             })
-            .catch(() => showSnackbar('Gagal Menghapus Produk', 'error'));
+            .catch(() => showSnackbar('Gagal Menghapus Bahan Baku', 'error'));
+        }
+        
+        function openEditBahanBakuModal(id, nama, hpp, stok) {
+            alert('Edit modal belum diimplementasi');
         }
         
         function showSnackbar(message, type = 'success') {
@@ -121,6 +124,6 @@
                 snackbar.className = snackbar.className.replace("show", "");
             }, 3000);
         }
-    </script> -->
+    </script>
 </body>
 </html>

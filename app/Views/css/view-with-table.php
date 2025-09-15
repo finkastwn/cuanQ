@@ -65,6 +65,7 @@
     .table td {
         background-color:  <?= MAIN_VERY_LIGHT_COLOR; ?>;
         padding: 15px;
+        text-align: center;
         color: <?= MAIN_DARK_COLOR; ?>;
         border-bottom: 1px solid <?= VIOLET_ACCENT; ?>;
     }

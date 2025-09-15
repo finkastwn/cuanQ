@@ -23,21 +23,25 @@ class CreateBahanBakuTable extends Migration
                 'type'       => 'INT',
                 'constraint' => 11,
                 'unsigned'   => true,
+                'null'           => true,
             ],
             'stok' => [
                'type'       => 'INT',
                 'constraint' => 11,
                 'unsigned'   => true,
+                'null'           => true,
             ],
             'id_pemakaian_bahan' => [
                 'type'           => 'INT',
                 'constraint'     => 11,
                 'unsigned'       => true,
+                'null'           => true,
             ],
             'id_pembelian_bahan' => [
                 'type'           => 'INT',
                 'constraint'     => 11,
                 'unsigned'       => true,
+                'null'           => true,
             ],
             'created_at' => [
                 'type' => 'DATETIME',
