@@ -59,7 +59,7 @@
                                     <td><?= esc($item['stok'] ?? 0) ?></td>
                                     <td>
                                         <div class="action-buttons">
-                                            <a onclick="openEditBahanBakuModal(<?= $item['id'] ?>, '<?= esc($item['nama_bahan']) ?>', <?= $item['hpp'] ?? 0 ?>, <?= $item['stok'] ?? 0 ?>)" class="btn-edit">✏️ Edit</a>
+                                            <a onclick="openEditBahanBakuModal(<?= $item['id'] ?>, '<?= esc($item['nama_bahan']) ?>')" class="btn-edit">✏️ Edit</a>
                                             <a onclick="deleteBahanBaku(<?= $item['id'] ?>, '<?= esc($item['nama_bahan']) ?>')" class="btn-delete">🗑️ Delete</a>
                                         </div>
                                     </td>
@@ -72,6 +72,8 @@
     </div>
 
     <?php include(APPPATH . 'Views/partials/snackbar.php'); ?>
+    <?php include(APPPATH . 'Views/bahan-baku/modal-create.php'); ?>
+    <?php include(APPPATH . 'Views/bahan-baku/modal-edit.php'); ?>
     
     <script>
         function deleteBahanBaku(bahanBakuId, bahanBakuName) {
@@ -103,11 +105,7 @@
             })
             .catch(() => showSnackbar('Gagal Menghapus Bahan Baku', 'error'));
         }
-        
-        function openEditBahanBakuModal(id, nama, hpp, stok) {
-            alert('Edit modal belum diimplementasi');
-        }
-        
+                
         function showSnackbar(message, type = 'success') {
             let snackbar = document.getElementById('snackbar');
             

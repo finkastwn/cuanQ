@@ -20,3 +20,6 @@ $routes->get('/produk/promo/view/(:num)', 'ProdukController::view_promo/$1', ['f
 $routes->post('/produk/promo/delete', 'ProdukController::delete_promo', ['filter' => 'auth']);
 
 $routes->get('/bahan-baku', 'BahanBakuController::index', ['filter' => 'auth']);
+$routes->post('/bahan-baku/store', 'BahanBakuController::store', ['filter' => 'auth']);
+$routes->post('/bahan-baku/update', 'BahanBakuController::update', ['filter' => 'auth']);
+$routes->post('/bahan-baku/delete', 'BahanBakuController::delete', ['filter' => 'auth']);
