@@ -75,6 +75,78 @@ class ProdukController extends BaseController
         }
     }
 
+    public function update_produk()
+    {
+        $produkId = $this->request->getPost('produk_id');
+        $nama_produk = $this->request->getPost('nama_produk');
+        $harga_produk = $this->request->getPost('harga_produk');
+        
+        if (empty($produkId)) {
+            return $this->response->setJSON(['status' => 'error', 'message' => 'ID Produk Wajib Diisi']);
+        }
+
+        if (empty($nama_produk)) {
+            return $this->response->setJSON(['status' => 'error', 'message' => 'Nama Produk Wajib Diisi']);
+        }
+
+        if (empty($harga_produk)) {
+            return $this->response->setJSON(['status' => 'error', 'message' => 'Harga Produk Wajib Diisi']);
+        }
+
+        $existingProduct = $this->produkModel->find($produkId);
+        if (!$existingProduct) {
+            return $this->response->setJSON(['status' => 'error', 'message' => 'Produk Tidak Ditemukan']);
+        }
+        
+        $duplicateCheck = $this->produkModel
+                              ->where('nama_produk', $nama_produk)
+                              ->where('id !=', $produkId)
+                              ->first();
+        
+        if ($duplicateCheck) {
+            return $this->response->setJSON(['status' => 'error', 'message' => 'Nama Produk Sudah Terdaftar!']);
+        }
+
+        $harga_final = $harga_produk; // Default to new price
+        
+        if (!empty($existingProduct['promo_type']) && $existingProduct['promo_type'] !== 'none' && $existingProduct['promo_active'] == 1) {
+            if ($existingProduct['promo_type'] === 'percent') {
+                $discountAmount = ($harga_produk * intval($existingProduct['promo_value'])) / 100;
+                $harga_final = $harga_produk - $discountAmount;
+            } elseif ($existingProduct['promo_type'] === 'fixed') {
+                $harga_final = $harga_produk - intval($existingProduct['promo_value']);
+            }
+            $harga_final = max(0, $harga_final);
+        }
+        
+        $data = [
+            'nama_produk' => $nama_produk,
+            'harga_produk' => $harga_produk,
+            'harga_final' => $harga_final
+        ];
+
+        try {
+            $result = $this->produkModel->update($produkId, $data);
+            
+            if ($result) {
+                return $this->response->setJSON([
+                    'status' => 'success', 
+                    'message' => 'Produk Berhasil Diupdate!',
+                    'data' => [
+                        'id' => $produkId,
+                        'nama_produk' => $nama_produk,
+                        'harga_produk' => $harga_produk,
+                        'harga_final' => $harga_final
+                    ]
+                ]);
+            } else {
+                return $this->response->setJSON(['status' => 'error', 'message' => 'Gagal Mengupdate Produk']);
+            }
+        } catch (\Exception $e) {
+            return $this->response->setJSON(['status' => 'error', 'message' => 'Error: ' . $e->getMessage()]);
+        }
+    }
+
     public function store_promo()
     {
         $produkId = $this->request->getPost('produk_id');

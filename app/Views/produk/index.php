@@ -10,8 +10,8 @@
     <style>
         .table th:nth-child(5),
         .table td:nth-child(5) {
-            width: 200px;
-            text-align: left;
+            width: 120px;
+            text-align: center;
             border-left: 1px solid <?= VIOLET_ACCENT; ?>;
             border-radius: 0 10px 0 0;
         }
@@ -72,8 +72,8 @@
                                     <td>
                                         <div class="action-buttons">
                                             <a onclick="openPromoModal(<?= $item['id'] ?>, '<?= esc($item['nama_produk'] ?? $item['produk']) ?>', <?= $item['harga_produk'] ?? 0 ?>)" class="btn-promo">🏷️ Promo</a>
-                                            <!-- <a href="/produk/edit/<?= $item['id'] ?>" class="btn-edit">✏️ Edit</a>
-                                            <a href="/produk/delete/<?= $item['id'] ?>" class="btn-delete">🗑️ Delete</a> -->
+                                            <a onclick="openEditModal(<?= $item['id'] ?>, '<?= esc($item['nama_produk'] ?? $item['produk']) ?>', <?= $item['harga_produk'] ?? 0 ?>)" class="btn-edit">✏️ Edit</a>
+                                            <a href="/produk/delete/<?= $item['id'] ?>" class="btn-delete">🗑️ Delete</a>
                                         </div>
                                     </td>
                                 </tr>
@@ -85,6 +85,7 @@
     </div>
 
     <?php include(APPPATH . 'Views/produk/modal-create.php'); ?>
+    <?php include(APPPATH . 'Views/produk/modal-edit.php'); ?>
     <?php include(APPPATH . 'Views/produk/modal-promo.php'); ?>
     <?php include(APPPATH . 'Views/partials/snackbar.php'); ?>
 </body>

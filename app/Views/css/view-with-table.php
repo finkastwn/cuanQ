@@ -71,7 +71,9 @@
     
     .action-buttons {
         display: flex;
-        gap: 8px;
+        flex-direction: column;
+        gap: 6px;
+        align-items: center;
     }
     
     .btn-edit, .btn-delete, .btn-promo {
