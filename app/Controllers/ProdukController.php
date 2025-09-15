@@ -147,6 +147,39 @@ class ProdukController extends BaseController
         }
     }
 
+    public function delete_produk()
+    {
+        $produkId = $this->request->getPost('produk_id');
+        
+        if (empty($produkId)) {
+            return $this->response->setJSON(['status' => 'error', 'message' => 'ID Produk Wajib Diisi']);
+        }
+
+        $existingProduct = $this->produkModel->find($produkId);
+        if (!$existingProduct) {
+            return $this->response->setJSON(['status' => 'error', 'message' => 'Produk Tidak Ditemukan']);
+        }
+
+        try {
+            $result = $this->produkModel->delete($produkId);
+            
+            if ($result) {
+                return $this->response->setJSON([
+                    'status' => 'success', 
+                    'message' => 'Produk Berhasil Dihapus!',
+                    'data' => [
+                        'id' => $produkId,
+                        'nama_produk' => $existingProduct['nama_produk']
+                    ]
+                ]);
+            } else {
+                return $this->response->setJSON(['status' => 'error', 'message' => 'Gagal Menghapus Produk']);
+            }
+        } catch (\Exception $e) {
+            return $this->response->setJSON(['status' => 'error', 'message' => 'Error: ' . $e->getMessage()]);
+        }
+    }
+
     public function store_promo()
     {
         $produkId = $this->request->getPost('produk_id');

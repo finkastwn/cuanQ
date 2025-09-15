@@ -37,7 +37,7 @@
                             <th>Nama Produk</th>
                             <th>Harga Produk</th>
                             <th>Status Promo</th>
-                            <th>Action</th>
+                            <th>Aksi</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -73,7 +73,7 @@
                                         <div class="action-buttons">
                                             <a onclick="openPromoModal(<?= $item['id'] ?>, '<?= esc($item['nama_produk'] ?? $item['produk']) ?>', <?= $item['harga_produk'] ?? 0 ?>)" class="btn-promo">🏷️ Promo</a>
                                             <a onclick="openEditModal(<?= $item['id'] ?>, '<?= esc($item['nama_produk'] ?? $item['produk']) ?>', <?= $item['harga_produk'] ?? 0 ?>)" class="btn-edit">✏️ Edit</a>
-                                            <a href="/produk/delete/<?= $item['id'] ?>" class="btn-delete">🗑️ Delete</a>
+                                            <a onclick="deleteProduk(<?= $item['id'] ?>, '<?= esc($item['nama_produk'] ?? $item['produk']) ?>')" class="btn-delete">🗑️ Delete</a>
                                         </div>
                                     </td>
                                 </tr>
@@ -88,5 +88,54 @@
     <?php include(APPPATH . 'Views/produk/modal-edit.php'); ?>
     <?php include(APPPATH . 'Views/produk/modal-promo.php'); ?>
     <?php include(APPPATH . 'Views/partials/snackbar.php'); ?>
+    
+    <script>
+        function deleteProduk(productId, productName) {
+            if (!confirm(`Apakah Anda yakin ingin menghapus produk "${productName}"?\n\nTindakan ini tidak dapat dibatalkan.`)) {
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('produk_id', productId);
+            
+            fetch('<?= base_url('produk/delete') ?>', {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    '<?= csrf_token() ?>': '<?= csrf_hash() ?>'
+                },
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    showSnackbar('Produk Berhasil Dihapus!', 'success');
+                    setTimeout(() => {
+                        location.reload();
+                    }, 500);
+                } else {
+                    showSnackbar(data.message || 'Gagal Menghapus Produk', 'error');
+                }
+            })
+            .catch(() => showSnackbar('Gagal Menghapus Produk', 'error'));
+        }
+        
+        function showSnackbar(message, type = 'success') {
+            let snackbar = document.getElementById('snackbar');
+            
+            if (!snackbar) {
+                snackbar = document.createElement('div');
+                snackbar.id = 'snackbar';
+                document.body.appendChild(snackbar);
+            }
+            
+            snackbar.textContent = message;
+            snackbar.className = `show ${type}`;
+            
+            setTimeout(() => {
+                snackbar.className = snackbar.className.replace("show", "");
+            }, 3000);
+        }
+    </script>
 </body>
 </html>
