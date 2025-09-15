@@ -67,7 +67,8 @@
                 </table>
         </div>
     </div>
-    
+
+    <?php include(APPPATH . 'Views/produk/modal-create.php'); ?>
     <?php include(APPPATH . 'Views/partials/snackbar.php'); ?>
 </body>
 </html>
