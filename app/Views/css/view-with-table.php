@@ -58,7 +58,7 @@
     .table th {
         background-color:  <?= VIOLET_ACCENT; ?>;
         padding: 15px;
-        text-align: left;
+        text-align: center;
         font-weight: 600;
     }
     
