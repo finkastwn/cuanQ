@@ -126,14 +126,6 @@
         margin-bottom: 15px;
     }
     
-    .date-field {
-        flex: 1;
-    }
-    
-    .date-field .form-input {
-        margin-bottom: 0;
-    }
-    
     .promo-row {
         display: flex;
         gap: 15px;
@@ -174,7 +166,6 @@
         currentPromoProductId = productId;
         currentProductPrice = parseInt(productPrice);
         
-        // First, check if product has existing promo
         fetch(`<?= base_url('produk/promo/view') ?>/${productId}`, {
             method: 'GET',
             headers: {
@@ -190,7 +181,6 @@
             }
         })
         .catch(() => {
-            // If error, just open with default values
             loadPromoData({
                 id: productId,
                 nama_produk: productName,
@@ -201,20 +191,16 @@
     }
     
     function loadPromoData(productData) {
-        // Reset form first
         document.getElementById('promoForm').reset();
         
-        // Set basic product info
         document.getElementById('promo_produk_id').value = productData.id;
         document.getElementById('promo_nama_produk').value = productData.nama_produk;
         document.getElementById('promo_harga_asli').value = parseInt(productData.harga_produk).toLocaleString('id-ID');
         
         if (productData.has_promo) {
-            // Load existing promo data
             document.getElementById('promo_type').value = productData.promo_type;
             document.getElementById('promo_active').value = productData.promo_active;
             
-            // Format dates for datetime-local input
             if (productData.promo_start) {
                 const startDate = new Date(productData.promo_start);
                 document.getElementById('promo_start').value = formatDateTimeLocal(startDate);
@@ -224,10 +210,8 @@
                 document.getElementById('promo_end').value = formatDateTimeLocal(endDate);
             }
             
-            // Trigger promo type change to set up the value input correctly
             document.getElementById('promo_type').dispatchEvent(new Event('change'));
             
-            // Set promo value after a short delay to ensure input is ready
             setTimeout(() => {
                 document.getElementById('promo_value').value = productData.promo_value;
                 if (productData.promo_type === 'fixed') {
@@ -236,16 +220,12 @@
                 calculateFinalPrice();
             }, 100);
             
-            // Show delete button
             document.getElementById('deletePromoBtn').style.display = 'inline-block';
             
-            // Update modal title
             document.querySelector('.modal-title').textContent = 'Edit Promo Produk';
         } else {
-            // No existing promo, set defaults
             document.getElementById('promo_active').value = '1';
             
-            // Set default dates
             const now = new Date();
             const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
             const nextWeek = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
@@ -253,10 +233,8 @@
             document.getElementById('promo_start').value = formatDateTimeLocal(tomorrow);
             document.getElementById('promo_end').value = formatDateTimeLocal(nextWeek);
             
-            // Hide delete button
             document.getElementById('deletePromoBtn').style.display = 'none';
             
-            // Update modal title
             document.querySelector('.modal-title').textContent = 'Atur Promo Produk';
         }
         

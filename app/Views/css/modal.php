@@ -141,4 +141,12 @@
     .currency-input {
         padding-left: 45px !important;
     }
+
+    .date-field {
+        flex: 1;
+    }
+    
+    .date-field .form-input {
+        margin-bottom: 0;
+    }
 </style>

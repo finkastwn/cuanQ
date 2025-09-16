@@ -15,6 +15,12 @@
             border-left: 1px solid <?= VIOLET_ACCENT; ?>;
             border-radius: 0 10px 0 0;
         }
+        .table th:nth-child(2),
+        .table td:nth-child(2) {
+            overflow-wrap: break-word; 
+            white-space: normal; 
+            width: 150px;
+        }
     </style>
 </head>
 <body>
@@ -49,16 +55,27 @@
                                     </div>
                                 </td>
                             </tr>
-                        <?php else: ?>
-                            <?php foreach ($pembelianBahan as $index => $item): ?>
-                                <tr>
-                                </tr>
-                            <?php endforeach; ?>
+                            <?php else: ?>
+                                <?php $no = 1; ?>
+                                <?php foreach ($pembelianBahan as $item): ?>
+                                    <tr>
+                                        <td><?php echo $no++; ?></td>
+                                        <td><?php echo date('Y-m-d', strtotime($item['tanggal_pembelian'])); ?></td>
+                                        <td><?php echo $item['nama_pembelian']; ?></td>
+                                        <td>
+                                            <div class="action-buttons">
+                                                <a onclick="" class="btn-edit">✏️ Edit</a>
+                                                <a onclick="" class="btn-delete">🗑️ Delete</a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
                         <?php endif; ?>
                     </tbody>
                 </table>
         </div>
     </div>
     <?php include(APPPATH . 'Views/partials/snackbar.php'); ?>
+    <?php include(APPPATH . 'Views/pembelian-bahan/modal-create.php'); ?>
 </body>
 </html>
