@@ -33,4 +33,11 @@ $routes->post('/pembelian-bahan/delete', 'PembelianBahanController::delete', ['f
 $routes->get('/pesanan', 'PesananController::index', ['filter' => 'auth']);
 $routes->get('/pesanan/detail/(:num)', 'PesananController::detail/$1', ['filter' => 'auth']);
 $routes->post('/pesanan/store', 'PesananController::store', ['filter' => 'auth']);
+$routes->post('/pesanan/update', 'PesananController::update', ['filter' => 'auth']);
 $routes->post('/pesanan/delete', 'PesananController::delete', ['filter' => 'auth']);
+
+$routes->get('/keuangan', 'KeuanganController::index', ['filter' => 'auth']);
+$routes->post('/keuangan/store', 'KeuanganController::store', ['filter' => 'auth']);
+$routes->post('/keuangan/update', 'KeuanganController::update', ['filter' => 'auth']);
+$routes->post('/keuangan/delete', 'KeuanganController::delete', ['filter' => 'auth']);
+$routes->post('/keuangan/update-pesanan-status', 'KeuanganController::updatePesananStatus', ['filter' => 'auth']);

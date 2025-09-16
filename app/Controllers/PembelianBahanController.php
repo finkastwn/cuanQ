@@ -49,12 +49,17 @@ class PembelianBahanController extends BaseController
     {
         $namaPembelian = $this->request->getPost('nama_pembelian');
         $tanggalPembelian = $this->request->getPost('tanggal_pembelian');
+        $sourceMoney = $this->request->getPost('source_money');
         $adminFee = $this->request->getPost('admin_fee');
         $discount = $this->request->getPost('discount');
         $hargaTotal = $this->request->getPost('harga_total');
         
         if (empty($namaPembelian) || empty($tanggalPembelian)) {
             return $this->response->setJSON(['status' => 'error', 'message' => 'Nama dan Tanggal Pembelian Wajib Diisi']);
+        }
+        
+        if (empty($sourceMoney)) {
+            return $this->response->setJSON(['status' => 'error', 'message' => 'Source Money Wajib Diisi']);
         }
         
         $bahanBakuIds = $this->request->getPost('bahan_baku_id');
@@ -70,13 +75,13 @@ class PembelianBahanController extends BaseController
         $dataPembelian = [
             'nama_pembelian' => $namaPembelian,
             'tanggal_pembelian' => $tanggalPembelian,
+            'source_money' => $sourceMoney,
             'admin_fee' => $adminFee,
             'discount' => $discount,
             'harga_total' => $hargaTotal
         ];
 
         try {
-            // Start transaction
             $db = \Config\Database::connect();
             $db->transStart();
             
@@ -104,12 +109,11 @@ class PembelianBahanController extends BaseController
                         'harga_per_unit' => $hargaPerUnit[$key],
                     ];
                     
-                    // Update stock and hpp in bahan_baku table
                     $currentBahanBaku = $this->bahanBakuModel->find($bahanBakuId);
                     if ($currentBahanBaku) {
                         $currentStok = $currentBahanBaku['stok'] ?? 0;
                         $newStok = $currentStok + $totalStok;
-                        $newHpp = $hargaPerUnit[$key]; // HPP is price per piece
+                        $newHpp = $hargaPerUnit[$key];
                         
                         $this->bahanBakuModel->update($bahanBakuId, [
                             'stok' => $newStok,
@@ -144,6 +148,7 @@ class PembelianBahanController extends BaseController
         $pembelianId = $this->request->getPost('pembelian_id');
         $namaPembelian = $this->request->getPost('nama_pembelian');
         $tanggalPembelian = $this->request->getPost('tanggal_pembelian');
+        $sourceMoney = $this->request->getPost('source_money');
         $adminFee = $this->request->getPost('admin_fee');
         $discount = $this->request->getPost('discount');
         $itemsJson = $this->request->getPost('items');
@@ -168,6 +173,7 @@ class PembelianBahanController extends BaseController
             $dataUpdate = [
                 'nama_pembelian' => $namaPembelian,
                 'tanggal_pembelian' => $tanggalPembelian,
+                'source_money' => $sourceMoney,
                 'admin_fee' => $adminFee,
                 'discount' => $discount
             ];

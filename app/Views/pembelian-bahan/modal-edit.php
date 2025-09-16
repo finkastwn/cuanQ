@@ -34,6 +34,15 @@
             </div>
             
             <div class="form-group">
+                <label for="edit_source_money" class="form-label">Source Money</label>
+                <select id="edit_source_money" name="source_money" class="form-input" required>
+                    <option value="">Pilih Source Money</option>
+                    <option value="duit_pribadi">💳 Duit Pribadi</option>
+                    <option value="bank_account">🏦 Bank Account</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
                 <div class="promo-row">
                     <div class="promo-field">
                         <label for="edit_admin_fee" class="form-label">Biaya Admin</label>
@@ -147,10 +156,11 @@
 </style>
 
 <script>
-    function openEditPembelianModal(id, nama, tanggal, adminFee, discount) {
+    function openEditPembelianModal(id, nama, tanggal, sourceMoney, adminFee, discount) {
         document.getElementById('edit_pembelian_id').value = id;
         document.getElementById('edit_nama_pembelian').value = nama;
         document.getElementById('edit_tanggal_pembelian').value = tanggal;
+        document.getElementById('edit_source_money').value = sourceMoney;
         document.getElementById('edit_admin_fee').value = adminFee.toLocaleString('id-ID');
         document.getElementById('edit_discount').value = discount.toLocaleString('id-ID');
         

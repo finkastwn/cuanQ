@@ -8,8 +8,8 @@
     <title>CuanQ - Pembelian Bahan</title>
     <link href="/css/global-font.css" rel="stylesheet">
     <style>
-        .table th:nth-child(4),
-        .table td:nth-child(4) {
+        .table th:nth-child(5),
+        .table td:nth-child(5) {
             width: 120px;
             text-align: center;
             border-left: 1px solid <?= VIOLET_ACCENT; ?>;
@@ -45,13 +45,14 @@
                             <th>No</th>
                             <th>Tanggal</th>
                             <th>Nama Pembelian</th>
+                            <th>Source Money</th>
                             <th>Aksi</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php if (empty($pembelianBahan)): ?>
                             <tr class="no-data-row">
-                                <td colspan="4" class="no-data-cell">
+                                <td colspan="5" class="no-data-cell">
                                     <div class="no-data">
                                         <div class="no-data-icon">📊</div>
                                         <p>Tidak ada data.</p>
@@ -66,8 +67,23 @@
                                         <td><?php echo date('Y-m-d', strtotime($item['tanggal_pembelian'])); ?></td>
                                         <td><?php echo $item['nama_pembelian']; ?></td>
                                         <td>
+                                            <?php 
+                                            $sourceMoney = $item['source_money'] ?? 'duit_pribadi';
+                                            switch($sourceMoney) {
+                                                case 'duit_pribadi':
+                                                    echo '<span style="color: #dc3545; font-weight: 600;">💳 Duit Pribadi</span>';
+                                                    break;
+                                                case 'bank_account':
+                                                    echo '<span style="color: #28a745; font-weight: 600;">🏦 Bank Account</span>';
+                                                    break;
+                                                default:
+                                                    echo '<span style="color: #6c757d;">-</span>';
+                                            }
+                                            ?>
+                                        </td>
+                                        <td>
                                             <div class="action-buttons">
-                                                <a onclick="event.stopPropagation(); openEditPembelianModal(<?= $item['id'] ?>, '<?= esc($item['nama_pembelian']) ?>', '<?= $item['tanggal_pembelian'] ?>', <?= $item['admin_fee'] ?? 0 ?>, <?= $item['discount'] ?? 0 ?>);" class="btn-edit">✏️ Edit</a>
+                                                <a onclick="event.stopPropagation(); openEditPembelianModal(<?= $item['id'] ?>, '<?= esc($item['nama_pembelian']) ?>', '<?= $item['tanggal_pembelian'] ?>', '<?= $item['source_money'] ?? 'duit_pribadi' ?>', <?= $item['admin_fee'] ?? 0 ?>, <?= $item['discount'] ?? 0 ?>);" class="btn-edit">✏️ Edit</a>
                                                 <a onclick="event.stopPropagation(); deletePembelianBahan(<?= $item['id'] ?>, '<?= esc($item['nama_pembelian']) ?>');" class="btn-delete">🗑️ Delete</a>
                                             </div>
                                         </td>

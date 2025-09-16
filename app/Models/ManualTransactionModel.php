@@ -4,18 +4,19 @@ namespace App\Models;
 
 use CodeIgniter\Model;
 
-class PembelianBahanModel extends Model
+class ManualTransactionModel extends Model
 {
-    protected $table            = 'pembelian_bahan';
+    protected $table            = 'manual_transactions';
     protected $primaryKey       = 'id';
     
     protected $allowedFields = [
-        'tanggal_pembelian',
-        'nama_pembelian',
+        'tanggal',
+        'keterangan',
+        'type',
         'source_money',
-        'admin_fee',
-        'discount',
-        'harga_total',
+        'jumlah',
+        'kategori',
+        'reference_id',
     ];
 
     protected $useTimestamps = true;

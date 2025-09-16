@@ -31,6 +31,15 @@
                 </div>
             </div>
             
+            <div class="form-group">
+                <label for="source_money" class="form-label">Source Money</label>
+                <select id="source_money" name="source_money" class="form-input" required>
+                    <option value="">Pilih Source Money</option>
+                    <option value="duit_pribadi">💳 Duit Pribadi</option>
+                    <option value="bank_account">🏦 Bank Account</option>
+                </select>
+            </div>
+            
             <hr style="margin: 20px 0;">
 
             <div id="item-list">

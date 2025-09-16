@@ -81,6 +81,7 @@
                             <th>No</th>
                             <th>Nama Pembeli</th>
                             <th>Source</th>
+                            <th>Status</th>
                             <th>Total Harga</th>
                             <th>Tanggal</th>
                             <th>Aksi</th>
@@ -89,7 +90,7 @@
                     <tbody>
                     <?php if (empty($pesanan)): ?>
                             <tr class="no-data-row">
-                                <td colspan="6" class="no-data-cell">
+                                <td colspan="7" class="no-data-cell">
                                     <div class="no-data">
                                         <div class="no-data-icon">📊</div>
                                         <p>Tidak ada data.</p>
@@ -107,10 +108,33 @@
                                                 <?= ucfirst($item['source_penjualan']) ?>
                                             </span>
                                         </td>
+                                        <td>
+                                            <?php 
+                                            $status = $item['status'] ?? 'pesanan_baru';
+                                            $statusLabels = [
+                                                'pesanan_baru' => '🆕 Baru',
+                                                'dalam_proses' => '⏳ Proses', 
+                                                'dikirim' => '🚚 Dikirim',
+                                                'selesai' => '✅ Selesai',
+                                                'dicairkan' => '💰 Dicairkan'
+                                            ];
+                                            $statusColors = [
+                                                'pesanan_baru' => '#6c757d',
+                                                'dalam_proses' => '#ffc107', 
+                                                'dikirim' => '#17a2b8',
+                                                'selesai' => '#28a745',
+                                                'dicairkan' => '#007bff'
+                                            ];
+                                            ?>
+                                            <span style="color: <?= $statusColors[$status] ?>; font-weight: 600;">
+                                                <?= $statusLabels[$status] ?>
+                                            </span>
+                                        </td>
                                         <td>Rp <?php echo number_format($item['total_harga'], 0, ',', '.'); ?></td>
                                         <td><?php echo date('Y-m-d', strtotime($item['tanggal_pesanan'])); ?></td>
                                         <td>
                                             <div class="action-buttons">
+                                                <a onclick="event.stopPropagation(); openEditStatusModal(<?= $item['id'] ?>, '<?= esc($item['nama_pembeli']) ?>', '<?= $status ?>');" class="btn-edit">📝 Edit</a>
                                                 <a onclick="event.stopPropagation(); deletePesanan(<?= $item['id'] ?>, '<?= esc($item['nama_pembeli']) ?>');" class="btn-delete">🗑️ Delete</a>
                                             </div>
                                         </td>
@@ -124,7 +148,81 @@
     <?php include(APPPATH . 'Views/partials/snackbar.php'); ?>
     <?php include(APPPATH . 'Views/pesanan/modal-create.php'); ?>
     
+    <div id="editStatusModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Update Status Pesanan</h2>
+                <span class="close" onclick="closeEditStatusModal()">&times;</span>
+            </div>
+            
+            <form id="editStatusForm">
+                <input type="hidden" id="edit_pesanan_id" name="id">
+                
+                <div class="form-group">
+                    <label class="form-label">Nama Pembeli</label>
+                    <input type="text" id="edit_nama_pembeli" class="form-input" readonly>
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit_status" class="form-label">Status</label>
+                    <select id="edit_status" name="status" class="form-input" required>
+                        <option value="pesanan_baru">🆕 Pesanan Baru</option>
+                        <option value="dalam_proses">⏳ Dalam Proses</option>
+                        <option value="dikirim">🚚 Dikirim</option>
+                        <option value="selesai">✅ Selesai</option>
+                        <option value="dicairkan">💰 Dicairkan</option>
+                    </select>
+                </div>
+                
+                <div class="modal-actions">
+                    <button type="button" class="btn-cancel" onclick="closeEditStatusModal()">Kembali</button>
+                    <button type="submit" class="btn-submit">Update Status</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
     <script>
+        function openEditStatusModal(id, nama, status) {
+            document.getElementById('edit_pesanan_id').value = id;
+            document.getElementById('edit_nama_pembeli').value = nama;
+            document.getElementById('edit_status').value = status;
+            document.getElementById('editStatusModal').style.display = 'block';
+        }
+        
+        function closeEditStatusModal() {
+            document.getElementById('editStatusModal').style.display = 'none';
+            document.getElementById('editStatusForm').reset();
+        }
+        
+        document.getElementById('editStatusForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            
+            fetch('<?= base_url('pesanan/update') ?>', {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    '<?= csrf_token() ?>': '<?= csrf_hash() ?>'
+                },
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    showSnackbar('Status pesanan berhasil diupdate!', 'success');
+                    closeEditStatusModal();
+                    setTimeout(() => {
+                        location.reload();
+                    }, 500);
+                } else {
+                    showSnackbar(data.message || 'Gagal mengupdate status', 'error');
+                }
+            })
+            .catch(() => showSnackbar('Gagal mengupdate status', 'error'));
+        });
+        
         function deletePesanan(id, nama) {
             if (confirm(`Apakah Anda yakin ingin menghapus pesanan dari "${nama}"?`)) {
                 const formData = new FormData();

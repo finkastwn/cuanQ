@@ -171,7 +171,7 @@ if (!isset($activeMenu)) $activeMenu = '';
         <a href="/produk" class="<?= $activeMenu === 'produk' ? 'active' : '' ?>">Produk</a>
         <a href="/bahan-baku" class="<?= $activeMenu === 'bahan_baku' ? 'active' : '' ?>">Bahan Baku</a>
         <a href="/pembelian-bahan" class="<?= $activeMenu === 'pembelian' ? 'active' : '' ?>">Pembelian Bahan</a>
-        <a href="/" class="<?= $activeMenu === 'keuangan' ? 'active' : '' ?>">Keuangan</a>
+        <a href="/keuangan" class="<?= $activeMenu === 'keuangan' ? 'active' : '' ?>">Keuangan</a>
     </div>
     <a href="/logout" class="logout-btn">Logout</a>
 </div>

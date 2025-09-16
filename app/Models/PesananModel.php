@@ -13,6 +13,7 @@ class PesananModel extends Model
         'nama_pembeli',
         'source_penjualan',
         'tanggal_pesanan',
+        'status',
         'ada_biaya_potongan',
         'biaya_pemrosesan',
         'subtotal',
