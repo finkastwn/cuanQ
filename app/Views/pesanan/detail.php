@@ -356,7 +356,7 @@
             </div>
         </div>
     </div>
-
+    <div id="snackbar"></div>           
     <div id="bahanBakuModal" class="modal" style="display: none;">
         <div class="modal-content" style="max-width: 900px; max-height: 80vh; overflow-y: auto;">
             <div class="modal-header">
@@ -547,11 +547,74 @@
         .stock-batch-info {
             color: #666;
         }
+        
+        #snackbar {
+            visibility: hidden;
+            min-width: 250px;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            border-radius: 8px;
+            padding: 16px;
+            position: fixed;
+            z-index: 10000;
+            left: 50%;
+            top: 30px;
+            font-size: 16px;
+            font-weight: 600;
+            transform: translateX(-50%);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        #snackbar.success {
+            background: linear-gradient(135deg, <?= SUCCESS; ?>, #1e7e34);
+        }
+
+        #snackbar.error {
+            background: linear-gradient(135deg, #dc3545, #c82333);
+        }
+        
+        #snackbar.show {
+            visibility: visible;
+            -webkit-animation: snackbar-fadein 0.5s, snackbar-fadeout 0.5s 2.5s;
+            animation: snackbar-fadein 0.5s, snackbar-fadeout 0.5s 2.5s;
+        }
+        
+        @-webkit-keyframes snackbar-fadein {
+            from {top: 0; opacity: 0;}
+            to {top: 30px; opacity: 1;}
+        }
+        
+        @keyframes snackbar-fadein {
+            from {top: 0; opacity: 0;}
+            to {top: 30px; opacity: 1;}
+        }
+        
+        @-webkit-keyframes snackbar-fadeout {
+            from {top: 30px; opacity: 1;}
+            to {top: 0; opacity: 0;}
+        }
+        
+        @keyframes snackbar-fadeout {
+            from {top: 30px; opacity: 1;}
+            to {top: 0; opacity: 0;}
+        }
     </style>
 
     <script>
         const pesananId = <?= $pesanan['id'] ?>;
         let availableBahanBaku = [];
+        
+        // Snackbar function
+        function showSnackbar(message, type = 'success') {
+            const snackbar = document.getElementById('snackbar');
+            snackbar.textContent = message;
+            snackbar.className = 'show ' + type;
+            
+            setTimeout(() => {
+                snackbar.className = snackbar.className.replace('show', '');
+            }, 3000);
+        }
         
         async function openBahanBakuModal() {
             document.getElementById('bahanBakuModal').style.display = 'flex';
@@ -670,17 +733,19 @@
                 const result = await response.json();
                 
                 if (result.status === 'success') {
-                    alert('Bahan baku berhasil ditambahkan!');
+                    showSnackbar('Bahan baku berhasil ditambahkan!', 'success');
                     document.getElementById('bahanBakuForm').reset();
                     document.getElementById('availableStockInfo').style.display = 'none';
                     await loadCurrentUsage();
-                    location.reload();
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1500);
                 } else {
-                    alert('Error: ' + result.message);
+                    showSnackbar('Error: ' + result.message, 'error');
                 }
             } catch (error) {
                 console.error('Error adding bahan baku usage:', error);
-                alert('Terjadi kesalahan saat menambahkan bahan baku');
+                showSnackbar('Terjadi kesalahan saat menambahkan bahan baku', 'error');
             }
         });
         
@@ -700,14 +765,17 @@
                 const result = await response.json();
                 
                 if (result.status === 'success') {
+                    showSnackbar('Penggunaan bahan baku berhasil dihapus!', 'success');
                     await loadCurrentUsage();
-                    location.reload();
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1500);
                 } else {
-                    alert('Error: ' + result.message);
+                    showSnackbar('Error: ' + result.message, 'error');
                 }
             } catch (error) {
                 console.error('Error deleting usage:', error);
-                alert('Terjadi kesalahan saat menghapus data');
+                showSnackbar('Terjadi kesalahan saat menghapus data', 'error');
             }
         }
         

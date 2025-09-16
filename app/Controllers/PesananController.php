@@ -374,8 +374,11 @@ class PesananController extends BaseController
     {
         try {
             $input = json_decode($this->request->getBody(), true);
-            $pesananId = $input['pesanan_id'];
-            $bahanBakuId = $input['bahan_baku_id'];
+            log_message('info', 'Raw input received: ' . $this->request->getBody());
+            log_message('info', 'Parsed input: ' . json_encode($input));
+            
+            $pesananId = (int) $input['pesanan_id'];
+            $bahanBakuId = (int) $input['bahan_baku_id'];
             $quantityUsed = (int) $input['quantity_used'];
 
             if (empty($pesananId) || empty($bahanBakuId) || $quantityUsed <= 0) {
@@ -393,16 +396,46 @@ class PesananController extends BaseController
                 ]);
             }
 
+            log_message('info', "Attempting to allocate stock: pesanan_id={$pesananId}, bahan_baku_id={$bahanBakuId}, quantity={$quantityUsed}");
+            
             $allocations = $this->pesananBahanUsageModel->allocateStockFIFO($pesananId, $bahanBakuId, $quantityUsed);
+            
+            log_message('info', "Allocations generated: " . json_encode($allocations));
 
-            foreach ($allocations as $allocation) {
-                $this->pesananBahanUsageModel->insert($allocation);
+            if (empty($allocations)) {
+                return $this->response->setJSON([
+                    'status' => 'error',
+                    'message' => 'Tidak ada stok yang dapat dialokasikan'
+                ]);
             }
+
+            $insertedCount = 0;
+            foreach ($allocations as $allocation) {
+                try {
+                    $result = $this->pesananBahanUsageModel->insert($allocation);
+                    if ($result) {
+                        $insertedCount++;
+                        log_message('info', "Successfully inserted allocation with ID {$result}: " . json_encode($allocation));
+                    } else {
+                        $errors = $this->pesananBahanUsageModel->errors();
+                        log_message('error', "Failed to insert allocation: " . json_encode($allocation));
+                        log_message('error', "Model validation errors: " . json_encode($errors));
+                    }
+                } catch (\Exception $insertException) {
+                    log_message('error', "Exception during insert: " . $insertException->getMessage());
+                    log_message('error', "Allocation data: " . json_encode($allocation));
+                }
+            }
+
+            log_message('info', "Total allocations inserted: {$insertedCount} out of " . count($allocations));
 
             return $this->response->setJSON([
                 'status' => 'success',
                 'message' => 'Bahan baku berhasil ditambahkan',
-                'data' => $allocations
+                'data' => [
+                    'allocations' => $allocations,
+                    'inserted_count' => $insertedCount
+                ]
             ]);
 
         } catch (\Exception $e) {
