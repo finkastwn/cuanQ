@@ -148,4 +148,14 @@ class BahanBakuController extends BaseController
             return $this->response->setJSON(['status' => 'error', 'message' => 'Error: ' . $e->getMessage()]);
         }
     }
+
+    public function getAll()
+    {
+        try {
+            $bahanBaku = $this->bahanBakuModel->findAll();
+            return $this->response->setJSON($bahanBaku);
+        } catch (\Exception $e) {
+            return $this->response->setJSON([]);
+        }
+    }
 }

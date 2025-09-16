@@ -8,6 +8,7 @@ use App\Models\PesananModel;
 use App\Models\PesananItemModel;
 use App\Models\ProdukModel;
 use App\Models\ManualTransactionModel;
+use App\Models\PesananBahanUsageModel;
 
 class PesananController extends BaseController
 {
@@ -15,6 +16,7 @@ class PesananController extends BaseController
     protected $pesananItemModel;
     protected $produkModel;
     protected $manualTransactionModel;
+    protected $pesananBahanUsageModel;
 
     public function __construct()
     {
@@ -22,6 +24,7 @@ class PesananController extends BaseController
         $this->pesananItemModel = new PesananItemModel();
         $this->produkModel = new ProdukModel();
         $this->manualTransactionModel = new ManualTransactionModel();
+        $this->pesananBahanUsageModel = new PesananBahanUsageModel();
     }
 
     public function index()
@@ -44,6 +47,11 @@ class PesananController extends BaseController
         $data['items'] = $this->pesananItemModel
                               ->where('pesanan_id', $pesananId)
                               ->findAll();
+        
+        $data['bahan_baku_usage'] = $this->pesananBahanUsageModel->getBahanBakuUsageByPesanan($pesananId);
+        
+        $data['total_hpp'] = $this->pesananBahanUsageModel->getTotalHppByPesanan($pesananId);
+        $data['total_untung'] = $data['pesanan']['total_harga'] - $data['total_hpp'];
         
         return view('pesanan/detail', $data);
     }
@@ -340,5 +348,94 @@ class PesananController extends BaseController
         }
         
         $builder->delete();
+    }
+
+    public function getBahanBakuUsage($pesananId)
+    {
+        try {
+            $usage = $this->pesananBahanUsageModel->getBahanBakuUsageByPesanan($pesananId);
+            return $this->response->setJSON($usage);
+        } catch (\Exception $e) {
+            return $this->response->setJSON([]);
+        }
+    }
+
+    public function getAvailableStock($bahanBakuId)
+    {
+        try {
+            $stock = $this->pesananBahanUsageModel->getAvailableStockFIFO($bahanBakuId);
+            return $this->response->setJSON($stock);
+        } catch (\Exception $e) {
+            return $this->response->setJSON([]);
+        }
+    }
+
+    public function addBahanBakuUsage()
+    {
+        try {
+            $input = json_decode($this->request->getBody(), true);
+            $pesananId = $input['pesanan_id'];
+            $bahanBakuId = $input['bahan_baku_id'];
+            $quantityUsed = (int) $input['quantity_used'];
+
+            if (empty($pesananId) || empty($bahanBakuId) || $quantityUsed <= 0) {
+                return $this->response->setJSON([
+                    'status' => 'error',
+                    'message' => 'Data tidak lengkap atau tidak valid'
+                ]);
+            }
+
+            $pesanan = $this->pesananModel->find($pesananId);
+            if (!$pesanan) {
+                return $this->response->setJSON([
+                    'status' => 'error',
+                    'message' => 'Pesanan tidak ditemukan'
+                ]);
+            }
+
+            $allocations = $this->pesananBahanUsageModel->allocateStockFIFO($pesananId, $bahanBakuId, $quantityUsed);
+
+            foreach ($allocations as $allocation) {
+                $this->pesananBahanUsageModel->insert($allocation);
+            }
+
+            return $this->response->setJSON([
+                'status' => 'success',
+                'message' => 'Bahan baku berhasil ditambahkan',
+                'data' => $allocations
+            ]);
+
+        } catch (\Exception $e) {
+            log_message('error', 'Error adding bahan baku usage: ' . $e->getMessage());
+            return $this->response->setJSON([
+                'status' => 'error',
+                'message' => $e->getMessage()
+            ]);
+        }
+    }
+
+    public function deleteBahanBakuUsage($usageId)
+    {
+        try {
+            $deleted = $this->pesananBahanUsageModel->delete($usageId);
+            
+            if ($deleted) {
+                return $this->response->setJSON([
+                    'status' => 'success',
+                    'message' => 'Penggunaan bahan baku berhasil dihapus'
+                ]);
+            } else {
+                return $this->response->setJSON([
+                    'status' => 'error',
+                    'message' => 'Data tidak ditemukan'
+                ]);
+            }
+        } catch (\Exception $e) {
+            log_message('error', 'Error deleting bahan baku usage: ' . $e->getMessage());
+            return $this->response->setJSON([
+                'status' => 'error',
+                'message' => 'Terjadi kesalahan saat menghapus data'
+            ]);
+        }
     }
 }

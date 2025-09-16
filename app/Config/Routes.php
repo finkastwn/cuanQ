@@ -20,6 +20,7 @@ $routes->get('/produk/promo/view/(:num)', 'ProdukController::view_promo/$1', ['f
 $routes->post('/produk/promo/delete', 'ProdukController::delete_promo', ['filter' => 'auth']);
 
 $routes->get('/bahan-baku', 'BahanBakuController::index', ['filter' => 'auth']);
+$routes->get('/bahan-baku/get-all', 'BahanBakuController::getAll', ['filter' => 'auth']);
 $routes->post('/bahan-baku/store', 'BahanBakuController::store', ['filter' => 'auth']);
 $routes->post('/bahan-baku/update', 'BahanBakuController::update', ['filter' => 'auth']);
 $routes->post('/bahan-baku/delete', 'BahanBakuController::delete', ['filter' => 'auth']);
@@ -32,9 +33,13 @@ $routes->post('/pembelian-bahan/delete', 'PembelianBahanController::delete', ['f
 
 $routes->get('/pesanan', 'PesananController::index', ['filter' => 'auth']);
 $routes->get('/pesanan/detail/(:num)', 'PesananController::detail/$1', ['filter' => 'auth']);
+$routes->get('/pesanan/get-bahan-baku-usage/(:num)', 'PesananController::getBahanBakuUsage/$1', ['filter' => 'auth']);
+$routes->get('/pesanan/get-available-stock/(:num)', 'PesananController::getAvailableStock/$1', ['filter' => 'auth']);
 $routes->post('/pesanan/store', 'PesananController::store', ['filter' => 'auth']);
 $routes->post('/pesanan/update', 'PesananController::update', ['filter' => 'auth']);
 $routes->post('/pesanan/delete', 'PesananController::delete', ['filter' => 'auth']);
+$routes->post('/pesanan/add-bahan-baku-usage', 'PesananController::addBahanBakuUsage', ['filter' => 'auth']);
+$routes->delete('/pesanan/delete-bahan-baku-usage/(:num)', 'PesananController::deleteBahanBakuUsage/$1', ['filter' => 'auth']);
 
 $routes->get('/keuangan', 'KeuanganController::index', ['filter' => 'auth']);
 $routes->post('/keuangan/store', 'KeuanganController::store', ['filter' => 'auth']);
