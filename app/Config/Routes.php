@@ -23,3 +23,5 @@ $routes->get('/bahan-baku', 'BahanBakuController::index', ['filter' => 'auth']);
 $routes->post('/bahan-baku/store', 'BahanBakuController::store', ['filter' => 'auth']);
 $routes->post('/bahan-baku/update', 'BahanBakuController::update', ['filter' => 'auth']);
 $routes->post('/bahan-baku/delete', 'BahanBakuController::delete', ['filter' => 'auth']);
+
+$routes->get('/pembelian-bahan', 'PembelianBahanController::index', ['filter' => 'auth']);

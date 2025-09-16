@@ -8,7 +8,7 @@ use App\Models\ProdukModel;
 
 class ProdukController extends BaseController
 {
-    protected $incomeCategoryModel;
+    protected $produkModel;
 
     public function __construct()
     {
