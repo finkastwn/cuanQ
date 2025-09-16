@@ -29,3 +29,8 @@ $routes->get('/pembelian-bahan/detail/(:num)', 'PembelianBahanController::detail
 $routes->post('/pembelian-bahan/store', 'PembelianBahanController::store', ['filter' => 'auth']);
 $routes->post('/pembelian-bahan/update', 'PembelianBahanController::update', ['filter' => 'auth']);
 $routes->post('/pembelian-bahan/delete', 'PembelianBahanController::delete', ['filter' => 'auth']);
+
+$routes->get('/pesanan', 'PesananController::index', ['filter' => 'auth']);
+$routes->get('/pesanan/detail/(:num)', 'PesananController::detail/$1', ['filter' => 'auth']);
+$routes->post('/pesanan/store', 'PesananController::store', ['filter' => 'auth']);
+$routes->post('/pesanan/delete', 'PesananController::delete', ['filter' => 'auth']);
