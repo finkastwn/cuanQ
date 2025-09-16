@@ -1,5 +1,5 @@
 <?php include(APPPATH . 'Views/css/view-with-table.php'); ?>
-<?php $activeMenu = 'produk'; ?>
+<?php $activeMenu = 'pembelian'; ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -21,6 +21,9 @@
             white-space: normal; 
             width: 150px;
         }
+        .table tbody tr {
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -32,7 +35,7 @@
                 <h1 class="page-title">Pembelian Bahan</h1>
                 <h2 class="page-subtitle">Kelola pembelian bahanmu disini!</h2>
             </div>
-            <a href="/pembelian-bahan/create" class="create-btn">Tambah Pembelian Bahan</a>
+            <a href="#" class="create-btn">Tambah Pembelian Bahan</a>
         </div>
         
         <div class="table-container">
@@ -58,14 +61,14 @@
                             <?php else: ?>
                                 <?php $no = 1; ?>
                                 <?php foreach ($pembelianBahan as $item): ?>
-                                    <tr>
+                                    <tr onclick="window.location.href='<?= base_url('pembelian-bahan/detail/' . $item['id']) ?>'">
                                         <td><?php echo $no++; ?></td>
                                         <td><?php echo date('Y-m-d', strtotime($item['tanggal_pembelian'])); ?></td>
                                         <td><?php echo $item['nama_pembelian']; ?></td>
                                         <td>
                                             <div class="action-buttons">
-                                                <a onclick="" class="btn-edit">✏️ Edit</a>
-                                                <a onclick="" class="btn-delete">🗑️ Delete</a>
+                                                <a onclick="event.stopPropagation(); alert('Edit coming soon');" class="btn-edit">✏️ Edit</a>
+                                                <a onclick="event.stopPropagation(); alert('Delete coming soon');" class="btn-delete">🗑️ Delete</a>
                                             </div>
                                         </td>
                                     </tr>
