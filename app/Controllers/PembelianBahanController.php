@@ -138,4 +138,163 @@ class PembelianBahanController extends BaseController
             return $this->response->setJSON(['status' => 'error', 'message' => 'Error: ' . $e->getMessage()]);
         }
     }
+    
+    public function update()
+    {
+        $pembelianId = $this->request->getPost('pembelian_id');
+        $namaPembelian = $this->request->getPost('nama_pembelian');
+        $tanggalPembelian = $this->request->getPost('tanggal_pembelian');
+        $adminFee = $this->request->getPost('admin_fee');
+        $discount = $this->request->getPost('discount');
+        $itemsJson = $this->request->getPost('items');
+        
+        if (empty($pembelianId)) {
+            return $this->response->setJSON(['status' => 'error', 'message' => 'ID Pembelian Wajib Diisi']);
+        }
+        
+        if (empty($namaPembelian) || empty($tanggalPembelian)) {
+            return $this->response->setJSON(['status' => 'error', 'message' => 'Nama dan Tanggal Pembelian Wajib Diisi']);
+        }
+        
+        $existingPembelian = $this->pembelianBahanModel->find($pembelianId);
+        if (!$existingPembelian) {
+            return $this->response->setJSON(['status' => 'error', 'message' => 'Pembelian Bahan Tidak Ditemukan']);
+        }
+        
+        try {
+            $db = \Config\Database::connect();
+            $db->transStart();
+            
+            $dataUpdate = [
+                'nama_pembelian' => $namaPembelian,
+                'tanggal_pembelian' => $tanggalPembelian,
+                'admin_fee' => $adminFee,
+                'discount' => $discount
+            ];
+            
+            $this->pembelianBahanModel->update($pembelianId, $dataUpdate);
+            
+            if (!empty($itemsJson)) {
+                $items = json_decode($itemsJson, true);
+                
+                $existingItems = $this->pembelianBahanItemModel->where('pembelian_id', $pembelianId)->findAll();
+                
+                foreach ($existingItems as $oldItem) {
+                    if ($oldItem['bahan_baku_id']) {
+                        $currentBahanBaku = $this->bahanBakuModel->find($oldItem['bahan_baku_id']);
+                        if ($currentBahanBaku) {
+                            $oldTotalStok = ($oldItem['jumlah_item'] ?? 0) * ($oldItem['isi_per_unit'] ?? 1);
+                            $currentStok = $currentBahanBaku['stok'] ?? 0;
+                            $newStok = max(0, $currentStok - $oldTotalStok);
+                            
+                            $this->bahanBakuModel->update($oldItem['bahan_baku_id'], ['stok' => $newStok]);
+                        }
+                    }
+                }
+                
+                foreach ($items as $item) {
+                    $itemData = [
+                        'bahan_baku_id' => $item['bahan_baku_id'],
+                        'jumlah_item' => $item['jumlah_item'],
+                        'isi_per_unit' => $item['isi_per_unit'],
+                        'harga_item' => $item['harga_item'],
+                        'harga_per_unit' => $item['harga_per_unit']
+                    ];
+                    
+                    if ($item['bahan_baku_id']) {
+                        $bahanBaku = $this->bahanBakuModel->find($item['bahan_baku_id']);
+                        $itemData['nama_item'] = $bahanBaku ? $bahanBaku['nama_bahan'] : 'Unknown';
+                    }
+                    
+                    $this->pembelianBahanItemModel->update($item['id'], $itemData);
+                    
+                    if ($item['bahan_baku_id']) {
+                        $currentBahanBaku = $this->bahanBakuModel->find($item['bahan_baku_id']);
+                        if ($currentBahanBaku) {
+                            $newTotalStok = ($item['jumlah_item'] ?? 0) * ($item['isi_per_unit'] ?? 1);
+                            $currentStok = $currentBahanBaku['stok'] ?? 0;
+                            $updatedStok = $currentStok + $newTotalStok;
+                            
+                            $this->bahanBakuModel->update($item['bahan_baku_id'], [
+                                'stok' => $updatedStok,
+                                'hpp' => $item['harga_per_unit']
+                            ]);
+                        }
+                    }
+                }
+            }
+            
+            $db->transComplete();
+            
+            if ($db->transStatus() === false) {
+                return $this->response->setJSON(['status' => 'error', 'message' => 'Gagal Mengupdate Data']);
+            }
+            
+            return $this->response->setJSON([
+                'status' => 'success', 
+                'message' => 'Pembelian Bahan Berhasil Diupdate!'
+            ]);
+            
+        } catch (\Exception $e) {
+            return $this->response->setJSON(['status' => 'error', 'message' => 'Error: ' . $e->getMessage()]);
+        }
+    }
+    
+    public function delete()
+    {
+        $pembelianId = $this->request->getPost('id');
+        
+        if (empty($pembelianId)) {
+            return $this->response->setJSON(['status' => 'error', 'message' => 'ID Pembelian Wajib Diisi']);
+        }
+        
+        $existingPembelian = $this->pembelianBahanModel->find($pembelianId);
+        if (!$existingPembelian) {
+            return $this->response->setJSON(['status' => 'error', 'message' => 'Pembelian Bahan Tidak Ditemukan']);
+        }
+        
+        try {
+            $db = \Config\Database::connect();
+            $db->transStart();
+            
+            $items = $this->pembelianBahanItemModel->where('pembelian_id', $pembelianId)->findAll();
+            
+            foreach ($items as $item) {
+                if ($item['bahan_baku_id']) {
+                    $currentBahanBaku = $this->bahanBakuModel->find($item['bahan_baku_id']);
+                    if ($currentBahanBaku) {
+                        $quantity = $item['jumlah_item'];
+                        $isiPerUnit = $item['isi_per_unit'] ?? 1;
+                        $totalStokToRemove = $quantity * $isiPerUnit;
+                        
+                        $currentStok = $currentBahanBaku['stok'] ?? 0;
+                        $newStok = max(0, $currentStok - $totalStokToRemove);
+                        
+                        $this->bahanBakuModel->update($item['bahan_baku_id'], [
+                            'stok' => $newStok,
+                            'hpp' => null
+                        ]);
+                    }
+                }
+            }
+            
+            $this->pembelianBahanItemModel->where('pembelian_id', $pembelianId)->delete();
+            
+            $deleted = $this->pembelianBahanModel->delete($pembelianId);
+            
+            $db->transComplete();
+            
+            if ($db->transStatus() === false || !$deleted) {
+                return $this->response->setJSON(['status' => 'error', 'message' => 'Gagal Menghapus Pembelian Bahan']);
+            }
+            
+            return $this->response->setJSON([
+                'status' => 'success', 
+                'message' => 'Pembelian Bahan Berhasil Dihapus!'
+            ]);
+            
+        } catch (\Exception $e) {
+            return $this->response->setJSON(['status' => 'error', 'message' => 'Error: ' . $e->getMessage()]);
+        }
+    }
 }

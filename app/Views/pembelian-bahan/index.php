@@ -67,8 +67,8 @@
                                         <td><?php echo $item['nama_pembelian']; ?></td>
                                         <td>
                                             <div class="action-buttons">
-                                                <a onclick="event.stopPropagation(); alert('Edit coming soon');" class="btn-edit">✏️ Edit</a>
-                                                <a onclick="event.stopPropagation(); alert('Delete coming soon');" class="btn-delete">🗑️ Delete</a>
+                                                <a onclick="event.stopPropagation(); openEditPembelianModal(<?= $item['id'] ?>, '<?= esc($item['nama_pembelian']) ?>', '<?= $item['tanggal_pembelian'] ?>', <?= $item['admin_fee'] ?? 0 ?>, <?= $item['discount'] ?? 0 ?>);" class="btn-edit">✏️ Edit</a>
+                                                <a onclick="event.stopPropagation(); deletePembelianBahan(<?= $item['id'] ?>, '<?= esc($item['nama_pembelian']) ?>');" class="btn-delete">🗑️ Delete</a>
                                             </div>
                                         </td>
                                     </tr>
@@ -80,5 +80,53 @@
     </div>
     <?php include(APPPATH . 'Views/partials/snackbar.php'); ?>
     <?php include(APPPATH . 'Views/pembelian-bahan/modal-create.php'); ?>
+    <?php include(APPPATH . 'Views/pembelian-bahan/modal-edit.php'); ?>
+    
+    <script>
+        function deletePembelianBahan(id, nama) {
+            if (confirm(`Apakah Anda yakin ingin menghapus pembelian "${nama}"?`)) {
+                const formData = new FormData();
+                formData.append('id', id);
+                
+                fetch('<?= base_url('pembelian-bahan/delete') ?>', {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        '<?= csrf_token() ?>': '<?= csrf_hash() ?>'
+                    },
+                    body: formData
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        showSnackbar('Pembelian Bahan Berhasil Dihapus!', 'success');
+                        setTimeout(() => {
+                            location.reload();
+                        }, 500);
+                    } else {
+                        showSnackbar(data.message || 'Gagal Menghapus Pembelian Bahan', 'error');
+                    }
+                })
+                .catch(() => showSnackbar('Gagal Menghapus Pembelian Bahan', 'error'));
+            }
+        }
+        
+        function showSnackbar(message, type = 'success') {
+            let snackbar = document.getElementById('snackbar');
+            
+            if (!snackbar) {
+                snackbar = document.createElement('div');
+                snackbar.id = 'snackbar';
+                document.body.appendChild(snackbar);
+            }
+            
+            snackbar.textContent = message;
+            snackbar.className = `show ${type}`;
+            
+            setTimeout(() => {
+                snackbar.className = snackbar.className.replace('show', '');
+            }, 3000);
+        }
+    </script>
 </body>
 </html>
