@@ -5,7 +5,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CuanQ - Keuangan</title>
+    <title>CetakinMol - Keuangan</title>
     <link href="/css/global-font.css" rel="stylesheet">
     <style>
         .page-header {

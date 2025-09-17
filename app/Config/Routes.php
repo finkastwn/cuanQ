@@ -40,6 +40,7 @@ $routes->post('/pesanan/update', 'PesananController::update', ['filter' => 'auth
 $routes->post('/pesanan/delete', 'PesananController::delete', ['filter' => 'auth']);
 $routes->post('/pesanan/add-bahan-baku-usage', 'PesananController::addBahanBakuUsage', ['filter' => 'auth']);
 $routes->delete('/pesanan/delete-bahan-baku-usage/(:num)', 'PesananController::deleteBahanBakuUsage/$1', ['filter' => 'auth']);
+$routes->post('/pesanan/bulk-update-status', 'PesananController::bulkUpdateStatus', ['filter' => 'auth']);
 
 $routes->get('/keuangan', 'KeuanganController::index', ['filter' => 'auth']);
 $routes->post('/keuangan/store', 'KeuanganController::store', ['filter' => 'auth']);

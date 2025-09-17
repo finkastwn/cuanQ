@@ -5,7 +5,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CuanQ - Detail Pembelian</title>
+    <title>CetakinMol - Detail Pembelian</title>
     <link href="/css/global-font.css" rel="stylesheet">
     <style>
         .detail-card {

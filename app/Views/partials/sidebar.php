@@ -153,7 +153,7 @@
 if (!isset($activeMenu)) $activeMenu = '';
 ?>
 <div class="sidebar">
-    <h2 class="raleway-title">CuanQ</h2>
+    <h3 class="raleway-title" style="text-align: center">Cetakin&#8203;Mol</h3>
     <div class="user-section">
         <img src="/img/img_avatar.png" alt="avatar">
         <h3>Hi, <?= session()->get('name') ?>!</h3>

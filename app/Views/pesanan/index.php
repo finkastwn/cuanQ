@@ -5,7 +5,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CuanQ - Pesanan</title>
+    <title>CetakinMol - Pesanan</title>
     <link href="/css/global-font.css" rel="stylesheet">
     <style>
         .page-header {
@@ -60,6 +60,65 @@
         tr {
             cursor: pointer;
         }
+        
+        #bulkActions {
+            background: linear-gradient(135deg, <?= MAIN_COLOR; ?>, <?= MAIN_DARK_COLOR; ?>);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            align-items: center;
+            gap: 15px;
+        }
+        
+        #bulkStatusSelect {
+            background: white;
+            color: <?= MAIN_DARK_COLOR; ?>;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 6px;
+            padding: 8px 12px;
+            font-weight: 600;
+            min-width: 200px;
+        }
+        
+        #bulkStatusSelect:focus {
+            border-color: white;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(255,255,255,0.3);
+        }
+        
+        #bulkActions button {
+            border: 2px solid rgba(255,255,255,0.3);
+            color: white;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        #bulkActions .btn-submit {
+            background: rgba(255,255,255,0.2);
+        }
+        
+        #bulkActions .btn-submit:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-2px);
+        }
+        
+        #bulkActions .btn-cancel {
+            background: rgba(220,53,69,0.8);
+        }
+        
+        #bulkActions .btn-cancel:hover {
+            background: rgba(220,53,69,1);
+            transform: translateY(-2px);
+        }
+        
+        .pesanan-checkbox {
+            cursor: pointer;
+        }
+        
+        .pesanan-checkbox:checked {
+            accent-color: <?= MAIN_COLOR; ?>;
+        }
     </style>
 </head>
 <body>
@@ -71,13 +130,30 @@
                 <h1 class="page-title">Pesanan</h1>
                 <h2 class="page-subtitle">Kelola pesanan pelangganmu disini!</h2>
             </div>
-            <a href="#" class="create-btn">Tambah Pesanan</a>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <div id="bulkActions" style="display: none;">
+                    <select id="bulkStatusSelect" class="form-input" style="margin-right: 10px; padding: 8px 12px;">
+                        <option value="">Pilih Status</option>
+                        <option value="pesanan_baru">🆕 Pesanan Baru</option>
+                        <option value="dalam_proses">⏳ Dalam Proses</option>
+                        <option value="dikirim">🚚 Dikirim</option>
+                        <option value="selesai">✅ Selesai</option>
+                        <option value="dicairkan">💰 Dicairkan</option>
+                    </select>
+                    <button onclick="updateBulkStatus()" class="btn-submit" style="padding: 8px 16px; font-size: 14px;">Update Status</button>
+                    <button onclick="clearSelection()" class="btn-cancel" style="padding: 8px 16px; font-size: 14px;">Batal</button>
+                </div>
+                <a href="#" class="create-btn">Tambah Pesanan</a>
+            </div>
         </div>
         
         <div class="table-container">
                 <table class="table">
                     <thead>
                         <tr>
+                            <th style="width: 50px;">
+                                <input type="checkbox" id="selectAll" onchange="toggleAllSelection()" style="transform: scale(1.2);">
+                            </th>
                             <th>No</th>
                             <th>Nama Pembeli</th>
                             <th>Source</th>
@@ -91,7 +167,7 @@
                     <tbody>
                     <?php if (empty($pesanan)): ?>
                             <tr class="no-data-row">
-                                <td colspan="8" class="no-data-cell">
+                                <td colspan="9" class="no-data-cell">
                                     <div class="no-data">
                                         <div class="no-data-icon">📊</div>
                                         <p>Tidak ada data.</p>
@@ -101,15 +177,18 @@
                         <?php else: ?>
                                 <?php $no = 1; ?>
                                 <?php foreach ($pesanan as $item): ?>
-                                    <tr onclick="window.open('<?= base_url('pesanan/detail/' . $item['id']) ?>', '_blank')">
-                                        <td><?php echo $no++; ?></td>
-                                        <td><?php echo esc($item['nama_pembeli']); ?></td>
-                                        <td>
+                                    <tr>
+                                        <td onclick="event.stopPropagation();">
+                                            <input type="checkbox" class="pesanan-checkbox" value="<?= $item['id'] ?>" onchange="updateBulkActions()" style="transform: scale(1.2);">
+                                        </td>
+                                        <td onclick="window.open('<?= base_url('pesanan/detail/' . $item['id']) ?>', '_blank')"><?php echo $no++; ?></td>
+                                        <td onclick="window.open('<?= base_url('pesanan/detail/' . $item['id']) ?>', '_blank')"><?php echo esc($item['nama_pembeli']); ?></td>
+                                        <td onclick="window.open('<?= base_url('pesanan/detail/' . $item['id']) ?>', '_blank')">
                                             <span class="source-badge source-<?= $item['source_penjualan'] ?>">
                                                 <?= ucfirst($item['source_penjualan']) ?>
                                             </span>
                                         </td>
-                                        <td>
+                                        <td onclick="window.open('<?= base_url('pesanan/detail/' . $item['id']) ?>', '_blank')">
                                             <?php 
                                             $status = $item['status'] ?? 'pesanan_baru';
                                             $statusLabels = [
@@ -131,7 +210,7 @@
                                                 <?= $statusLabels[$status] ?>
                                             </span>
                                         </td>
-                                        <td>
+                                        <td onclick="window.open('<?= base_url('pesanan/detail/' . $item['id']) ?>', '_blank')">
                                             <?php if (isset($item['bahan_baku_usage_count']) && $item['bahan_baku_usage_count'] > 0): ?>
                                                 <span style="color: #28a745; font-weight: 600;">
                                                     ✅ Sudah (<?= $item['bahan_baku_usage_count'] ?>)
@@ -142,8 +221,8 @@
                                                 </span>
                                             <?php endif; ?>
                                         </td>
-                                        <td>Rp <?php echo number_format($item['total_harga'], 0, ',', '.'); ?></td>
-                                        <td><?php echo date('Y-m-d', strtotime($item['tanggal_pesanan'])); ?></td>
+                                        <td onclick="window.open('<?= base_url('pesanan/detail/' . $item['id']) ?>', '_blank')">Rp <?php echo number_format($item['total_harga'], 0, ',', '.'); ?></td>
+                                        <td onclick="window.open('<?= base_url('pesanan/detail/' . $item['id']) ?>', '_blank')"><?php echo date('Y-m-d', strtotime($item['tanggal_pesanan'])); ?></td>
                                         <td>
                                             <div class="action-buttons">
                                                 <a onclick="event.stopPropagation(); openEditStatusModal(<?= $item['id'] ?>, '<?= esc($item['nama_pembeli']) ?>', '<?= $status ?>');" class="btn-edit">📝 Edit</a>
@@ -278,6 +357,91 @@
             setTimeout(() => {
                 snackbar.className = snackbar.className.replace('show', '');
             }, 3000);
+        }
+        
+        // Bulk operations functions
+        function toggleAllSelection() {
+            const selectAllCheckbox = document.getElementById('selectAll');
+            const checkboxes = document.querySelectorAll('.pesanan-checkbox');
+            
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = selectAllCheckbox.checked;
+            });
+            
+            updateBulkActions();
+        }
+        
+        function updateBulkActions() {
+            const checkboxes = document.querySelectorAll('.pesanan-checkbox:checked');
+            const bulkActions = document.getElementById('bulkActions');
+            const selectAllCheckbox = document.getElementById('selectAll');
+            
+            if (checkboxes.length > 0) {
+                bulkActions.style.display = 'flex';
+                document.querySelector('.create-btn').style.display = 'none';
+            } else {
+                bulkActions.style.display = 'none';
+                document.querySelector('.create-btn').style.display = 'block';
+                selectAllCheckbox.checked = false;
+            }
+        }
+        
+        function clearSelection() {
+            const checkboxes = document.querySelectorAll('.pesanan-checkbox');
+            const selectAllCheckbox = document.getElementById('selectAll');
+            
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = false;
+            });
+            selectAllCheckbox.checked = false;
+            
+            updateBulkActions();
+        }
+        
+        function updateBulkStatus() {
+            const checkboxes = document.querySelectorAll('.pesanan-checkbox:checked');
+            const statusSelect = document.getElementById('bulkStatusSelect');
+            const selectedStatus = statusSelect.value;
+            
+            if (checkboxes.length === 0) {
+                showSnackbar('Pilih minimal satu pesanan', 'error');
+                return;
+            }
+            
+            if (!selectedStatus) {
+                showSnackbar('Pilih status yang akan diupdate', 'error');
+                return;
+            }
+            
+            const pesananIds = Array.from(checkboxes).map(checkbox => checkbox.value);
+            
+            if (confirm(`Apakah Anda yakin ingin mengupdate status ${pesananIds.length} pesanan menjadi "${statusSelect.options[statusSelect.selectedIndex].text}"?`)) {
+                const formData = new FormData();
+                formData.append('pesanan_ids', JSON.stringify(pesananIds));
+                formData.append('status', selectedStatus);
+                
+                fetch('<?= base_url('pesanan/bulk-update-status') ?>', {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        '<?= csrf_token() ?>': '<?= csrf_hash() ?>'
+                    },
+                    body: formData
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        showSnackbar(`Berhasil mengupdate ${data.updated_count} pesanan`, 'success');
+                        clearSelection();
+                        setTimeout(() => {
+                            location.reload();
+                        }, 1500);
+                    } else {
+                        showSnackbar(data.message || 'Gagal mengupdate status', 'error');
+                    }
+                })
+                .catch(() => showSnackbar('Gagal mengupdate status', 'error'));
+            }
         }
     </script>
 </body>

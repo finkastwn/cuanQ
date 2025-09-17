@@ -5,7 +5,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CuanQ - Pembelian Bahan</title>
+    <title>CetakinMol - Pembelian Bahan</title>
     <link href="/css/global-font.css" rel="stylesheet">
     <style>
         .table th:nth-child(5),

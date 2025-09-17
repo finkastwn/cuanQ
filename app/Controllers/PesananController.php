@@ -508,4 +508,79 @@ class PesananController extends BaseController
             log_message('error', "Failed to update bahan_baku stock: " . $e->getMessage());
         }
     }
+
+    public function bulkUpdateStatus()
+    {
+        $pesananIdsJson = $this->request->getPost('pesanan_ids');
+        $status = $this->request->getPost('status');
+        
+        if (empty($pesananIdsJson) || empty($status)) {
+            return $this->response->setJSON(['status' => 'error', 'message' => 'Data tidak lengkap']);
+        }
+        
+        $pesananIds = json_decode($pesananIdsJson, true);
+        if (!is_array($pesananIds) || empty($pesananIds)) {
+            return $this->response->setJSON(['status' => 'error', 'message' => 'ID pesanan tidak valid']);
+        }
+        
+        $validStatuses = ['pesanan_baru', 'dalam_proses', 'dikirim', 'selesai', 'dicairkan'];
+        if (!in_array($status, $validStatuses)) {
+            return $this->response->setJSON(['status' => 'error', 'message' => 'Status tidak valid']);
+        }
+        
+        try {
+            $db = \Config\Database::connect();
+            $db->transStart();
+            
+            $updatedCount = 0;
+            $errors = [];
+            
+            foreach ($pesananIds as $pesananId) {
+                $existingPesanan = $this->pesananModel->find($pesananId);
+                if (!$existingPesanan) {
+                    $errors[] = "Pesanan ID {$pesananId} tidak ditemukan";
+                    continue;
+                }
+                
+                $oldStatus = $existingPesanan['status'];
+                $updated = $this->pesananModel->update($pesananId, ['status' => $status]);
+                
+                if ($updated) {
+                    $updatedCount++;
+                    log_message('info', "Bulk status update: pesanan_id={$pesananId}, old_status='{$oldStatus}', new_status='{$status}'");
+                    
+                    try {
+                        $this->handleStatusChangeFinancialImpact($pesananId, $oldStatus, $status, $existingPesanan);
+                        log_message('info', "Financial impact handled successfully for pesanan ID: {$pesananId}");
+                    } catch (\Exception $financialError) {
+                        log_message('error', "Financial impact handling failed for pesanan ID: {$pesananId}. Error: " . $financialError->getMessage());
+                    }
+                } else {
+                    $errors[] = "Gagal mengupdate pesanan ID {$pesananId}";
+                }
+            }
+            
+            $db->transComplete();
+            
+            if ($db->transStatus() === false) {
+                return $this->response->setJSON(['status' => 'error', 'message' => 'Gagal mengupdate status pesanan']);
+            }
+            
+            $message = "Berhasil mengupdate {$updatedCount} pesanan";
+            if (!empty($errors)) {
+                $message .= ". Error: " . implode(', ', $errors);
+            }
+            
+            return $this->response->setJSON([
+                'status' => 'success',
+                'message' => $message,
+                'updated_count' => $updatedCount,
+                'errors' => $errors
+            ]);
+            
+        } catch (\Exception $e) {
+            log_message('error', "Error in bulk status update: " . $e->getMessage());
+            return $this->response->setJSON(['status' => 'error', 'message' => 'Error: ' . $e->getMessage()]);
+        }
+    }
 }

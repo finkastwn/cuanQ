@@ -5,7 +5,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CuanQ - Manual Bahan Usage</title>
+    <title>CetakinMol - Manual Bahan Usage</title>
     <link href="/css/global-font.css" rel="stylesheet">
     <style>
         .page-header {
@@ -227,22 +227,6 @@
         </div>
         
         <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-value">Rp <?= number_format($total_hpp, 0, ',', '.'); ?></div>
-                <div class="stat-label">Total HPP Keseluruhan</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-value">Rp <?= number_format($total_hpp_freebie, 0, ',', '.'); ?></div>
-                <div class="stat-label">HPP Freebies</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-value">Rp <?= number_format($total_hpp_thank_you, 0, ',', '.'); ?></div>
-                <div class="stat-label">HPP Thank You Cards</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-value">Rp <?= number_format($total_hpp_other, 0, ',', '.'); ?></div>
-                <div class="stat-label">HPP Lainnya</div>
-            </div>
         </div>
         
         <div class="table-container">
