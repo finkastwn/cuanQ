@@ -101,7 +101,7 @@
                         <?php else: ?>
                                 <?php $no = 1; ?>
                                 <?php foreach ($pesanan as $item): ?>
-                                    <tr onclick="window.location.href='<?= base_url('pesanan/detail/' . $item['id']) ?>'">
+                                    <tr onclick="window.open('<?= base_url('pesanan/detail/' . $item['id']) ?>', '_blank')">
                                         <td><?php echo $no++; ?></td>
                                         <td><?php echo esc($item['nama_pembeli']); ?></td>
                                         <td>

@@ -4,21 +4,23 @@ namespace App\Models;
 
 use CodeIgniter\Model;
 
-class PesananBahanUsageModel extends Model
+class ManualBahanUsageModel extends Model
 {
-    protected $table = 'pesanan_bahan_usage';
+    protected $table = 'manual_bahan_usage';
     protected $primaryKey = 'id';
     protected $useAutoIncrement = true;
     protected $returnType = 'array';
     protected $useSoftDeletes = false;
     protected $protectFields = true;
     protected $allowedFields = [
-        'pesanan_id',
-        'bahan_baku_id', 
+        'bahan_baku_id',
         'pembelian_bahan_id',
         'quantity_used',
         'hpp_per_unit',
-        'total_hpp'
+        'total_hpp',
+        'purpose',
+        'description',
+        'usage_date'
     ];
 
     protected $useTimestamps = true;
@@ -27,19 +29,17 @@ class PesananBahanUsageModel extends Model
     protected $updatedField = 'updated_at';
 
     protected $validationRules = [
-        'pesanan_id' => 'required|integer',
         'bahan_baku_id' => 'required|integer',
         'pembelian_bahan_id' => 'required|integer',
         'quantity_used' => 'required|integer|greater_than[0]',
         'hpp_per_unit' => 'required|numeric|greater_than_equal_to[0]',
-        'total_hpp' => 'required|numeric|greater_than_equal_to[0]'
+        'total_hpp' => 'required|numeric|greater_than_equal_to[0]',
+        'purpose' => 'required|in_list[freebie,thank_you_card,other]',
+        'description' => 'permit_empty|string',
+        'usage_date' => 'required|valid_date'
     ];
 
     protected $validationMessages = [
-        'pesanan_id' => [
-            'required' => 'Pesanan ID harus diisi',
-            'integer' => 'Pesanan ID harus berupa angka'
-        ],
         'bahan_baku_id' => [
             'required' => 'Bahan Baku ID harus diisi',
             'integer' => 'Bahan Baku ID harus berupa angka'
@@ -62,6 +62,14 @@ class PesananBahanUsageModel extends Model
             'required' => 'Total HPP harus diisi',
             'numeric' => 'Total HPP harus berupa angka',
             'greater_than_equal_to' => 'Total HPP tidak boleh negatif'
+        ],
+        'purpose' => [
+            'required' => 'Tujuan penggunaan harus diisi',
+            'in_list' => 'Tujuan penggunaan tidak valid'
+        ],
+        'usage_date' => [
+            'required' => 'Tanggal penggunaan harus diisi',
+            'valid_date' => 'Format tanggal tidak valid'
         ]
     ];
 
@@ -80,27 +88,30 @@ class PesananBahanUsageModel extends Model
         return $data;
     }
 
-    public function getBahanBakuUsageByPesanan($pesananId)
+    public function getManualUsageWithDetails()
     {
         return $this->select('
-            pesanan_bahan_usage.*,
+            manual_bahan_usage.*,
             bahan_baku.nama_bahan,
             pembelian_bahan.nama_pembelian,
             pembelian_bahan.tanggal_pembelian
         ')
-        ->join('bahan_baku', 'bahan_baku.id = pesanan_bahan_usage.bahan_baku_id')
-        ->join('pembelian_bahan', 'pembelian_bahan.id = pesanan_bahan_usage.pembelian_bahan_id')
-        ->where('pesanan_id', $pesananId)
-        ->orderBy('bahan_baku.nama_bahan', 'ASC')
+        ->join('bahan_baku', 'bahan_baku.id = manual_bahan_usage.bahan_baku_id')
+        ->join('pembelian_bahan', 'pembelian_bahan.id = manual_bahan_usage.pembelian_bahan_id')
+        ->orderBy('manual_bahan_usage.usage_date', 'DESC')
+        ->orderBy('manual_bahan_usage.created_at', 'DESC')
         ->findAll();
     }
 
-    public function getTotalHppByPesanan($pesananId)
+    public function getTotalHppByPurpose($purpose = null)
     {
-        $result = $this->select('SUM(total_hpp) as total_hpp')
-            ->where('pesanan_id', $pesananId)
-            ->first();
+        $builder = $this->select('SUM(total_hpp) as total_hpp');
         
+        if ($purpose) {
+            $builder->where('purpose', $purpose);
+        }
+        
+        $result = $builder->first();
         return $result['total_hpp'] ?? 0;
     }
 
@@ -118,12 +129,15 @@ class PesananBahanUsageModel extends Model
                     pbi.harga_per_unit as hpp_per_unit,
                     pb.tanggal_pembelian,
                     pb.nama_pembelian,
-                    COALESCE(SUM(pbu.quantity_used), 0) as total_used,
-                    ((pbi.jumlah_item * pbi.isi_per_unit) - COALESCE(SUM(pbu.quantity_used), 0)) as remaining_stock
+                    COALESCE(SUM(pbu.quantity_used), 0) as total_used_pesanan,
+                    COALESCE(SUM(mbu.quantity_used), 0) as total_used_manual,
+                    ((pbi.jumlah_item * pbi.isi_per_unit) - COALESCE(SUM(pbu.quantity_used), 0) - COALESCE(SUM(mbu.quantity_used), 0)) as remaining_stock
                 FROM pembelian_bahan_items pbi
                 JOIN pembelian_bahan pb ON pb.id = pbi.pembelian_id
                 LEFT JOIN pesanan_bahan_usage pbu ON pbu.pembelian_bahan_id = pbi.pembelian_id 
                     AND pbu.bahan_baku_id = pbi.bahan_baku_id
+                LEFT JOIN manual_bahan_usage mbu ON mbu.pembelian_bahan_id = pbi.pembelian_id 
+                    AND mbu.bahan_baku_id = pbi.bahan_baku_id
                 WHERE pbi.bahan_baku_id = ?
                 GROUP BY pbi.id, pbi.pembelian_id, pbi.bahan_baku_id, pbi.jumlah_item, pbi.isi_per_unit, pbi.harga_per_unit, 
                          pb.tanggal_pembelian, pb.nama_pembelian
@@ -144,11 +158,15 @@ class PesananBahanUsageModel extends Model
         }
     }
 
-    public function allocateStockFIFO($pesananId, $bahanBakuId, $quantityNeeded)
+    public function allocateStockFIFO($bahanBakuId, $quantityNeeded, $purpose, $description = '', $usageDate = null)
     {
         $availableBatches = $this->getAvailableStockFIFO($bahanBakuId);
         $allocations = [];
         $remainingQuantity = $quantityNeeded;
+
+        if (empty($availableBatches)) {
+            throw new \Exception("Tidak ada stok tersedia untuk bahan baku ini");
+        }
 
         foreach ($availableBatches as $batch) {
             if ($remainingQuantity <= 0) break;
@@ -157,12 +175,14 @@ class PesananBahanUsageModel extends Model
             
             if ($quantityFromThisBatch > 0) {
                 $allocations[] = [
-                    'pesanan_id' => (int) $pesananId,
                     'bahan_baku_id' => (int) $bahanBakuId,
                     'pembelian_bahan_id' => (int) $batch['pembelian_bahan_id'],
                     'quantity_used' => (int) $quantityFromThisBatch,
                     'hpp_per_unit' => (float) $batch['hpp_per_unit'],
-                    'total_hpp' => (float) ($quantityFromThisBatch * $batch['hpp_per_unit'])
+                    'total_hpp' => (float) ($quantityFromThisBatch * $batch['hpp_per_unit']),
+                    'purpose' => $purpose,
+                    'description' => $description,
+                    'usage_date' => $usageDate ?: date('Y-m-d')
                 ];
                 
                 $remainingQuantity -= $quantityFromThisBatch;
@@ -170,14 +190,14 @@ class PesananBahanUsageModel extends Model
         }
 
         if ($remainingQuantity > 0) {
-            throw new \Exception("Insufficient stock for {$bahanBakuId}. Need {$quantityNeeded}, available: " . ($quantityNeeded - $remainingQuantity));
+            throw new \Exception("Stok tidak mencukupi. Dibutuhkan {$quantityNeeded}, tersedia: " . ($quantityNeeded - $remainingQuantity));
         }
 
         return $allocations;
     }
 
-    public function deleteByPesanan($pesananId)
+    public function deleteByBahanBaku($bahanBakuId)
     {
-        return $this->where('pesanan_id', $pesananId)->delete();
+        return $this->where('bahan_baku_id', $bahanBakuId)->delete();
     }
 }

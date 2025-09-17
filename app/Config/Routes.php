@@ -46,3 +46,10 @@ $routes->post('/keuangan/store', 'KeuanganController::store', ['filter' => 'auth
 $routes->post('/keuangan/update', 'KeuanganController::update', ['filter' => 'auth']);
 $routes->post('/keuangan/delete', 'KeuanganController::delete', ['filter' => 'auth']);
 $routes->post('/keuangan/update-pesanan-status', 'KeuanganController::updatePesananStatus', ['filter' => 'auth']);
+
+$routes->get('/manual-bahan-usage', 'ManualBahanUsageController::index', ['filter' => 'auth']);
+$routes->post('/manual-bahan-usage/store', 'ManualBahanUsageController::store', ['filter' => 'auth']);
+$routes->post('/manual-bahan-usage/update', 'ManualBahanUsageController::update', ['filter' => 'auth']);
+$routes->post('/manual-bahan-usage/delete', 'ManualBahanUsageController::delete', ['filter' => 'auth']);
+$routes->get('/manual-bahan-usage/get-bahan-baku', 'ManualBahanUsageController::getAllBahanBaku', ['filter' => 'auth']);
+$routes->get('/manual-bahan-usage/get-available-stock/(:num)', 'ManualBahanUsageController::getAvailableStock/$1', ['filter' => 'auth']);

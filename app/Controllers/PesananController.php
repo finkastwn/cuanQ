@@ -33,7 +33,7 @@ class PesananController extends BaseController
                         ->select('pesanan.*, COUNT(pbu.id) as bahan_baku_usage_count')
                         ->join('pesanan_bahan_usage pbu', 'pbu.pesanan_id = pesanan.id', 'left')
                         ->groupBy('pesanan.id')
-                        ->orderBy('pesanan.created_at', 'DESC')
+                        ->orderBy('pesanan.tanggal_pesanan', 'DESC')
                         ->findAll();
         
         $data['pesanan'] = $pesananList;
