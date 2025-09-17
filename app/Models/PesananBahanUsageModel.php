@@ -114,18 +114,18 @@ class PesananBahanUsageModel extends Model
                     pbi.id as pembelian_bahan_item_id,
                     pbi.pembelian_id as pembelian_bahan_id,
                     pbi.bahan_baku_id,
-                    pbi.isi_per_unit as total_purchased,
+                    (pbi.jumlah_item * pbi.isi_per_unit) as total_purchased,
                     pbi.harga_per_unit as hpp_per_unit,
                     pb.tanggal_pembelian,
                     pb.nama_pembelian,
                     COALESCE(SUM(pbu.quantity_used), 0) as total_used,
-                    (pbi.isi_per_unit - COALESCE(SUM(pbu.quantity_used), 0)) as remaining_stock
+                    ((pbi.jumlah_item * pbi.isi_per_unit) - COALESCE(SUM(pbu.quantity_used), 0)) as remaining_stock
                 FROM pembelian_bahan_items pbi
                 JOIN pembelian_bahan pb ON pb.id = pbi.pembelian_id
                 LEFT JOIN pesanan_bahan_usage pbu ON pbu.pembelian_bahan_id = pbi.pembelian_id 
                     AND pbu.bahan_baku_id = pbi.bahan_baku_id
                 WHERE pbi.bahan_baku_id = ?
-                GROUP BY pbi.id, pbi.pembelian_id, pbi.bahan_baku_id, pbi.isi_per_unit, pbi.harga_per_unit, 
+                GROUP BY pbi.id, pbi.pembelian_id, pbi.bahan_baku_id, pbi.jumlah_item, pbi.isi_per_unit, pbi.harga_per_unit, 
                          pb.tanggal_pembelian, pb.nama_pembelian
                 HAVING remaining_stock > 0
                 ORDER BY pb.tanggal_pembelian ASC, pbi.id ASC
