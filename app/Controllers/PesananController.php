@@ -29,9 +29,14 @@ class PesananController extends BaseController
 
     public function index()
     {
-        $data['pesanan'] = $this->pesananModel
-                        ->orderBy('created_at', 'DESC')
+        $pesananList = $this->pesananModel
+                        ->select('pesanan.*, COUNT(pbu.id) as bahan_baku_usage_count')
+                        ->join('pesanan_bahan_usage pbu', 'pbu.pesanan_id = pesanan.id', 'left')
+                        ->groupBy('pesanan.id')
+                        ->orderBy('pesanan.created_at', 'DESC')
                         ->findAll();
+        
+        $data['pesanan'] = $pesananList;
         $data['produk'] = $this->produkModel->findAll();
         return view('pesanan/index', $data);
     }
@@ -416,6 +421,8 @@ class PesananController extends BaseController
                     if ($result) {
                         $insertedCount++;
                         log_message('info', "Successfully inserted allocation with ID {$result}: " . json_encode($allocation));
+                        
+                        $this->updateBahanBakuStock($allocation['bahan_baku_id'], -$allocation['quantity_used']);
                     } else {
                         $errors = $this->pesananBahanUsageModel->errors();
                         log_message('error', "Failed to insert allocation: " . json_encode($allocation));
@@ -450,9 +457,20 @@ class PesananController extends BaseController
     public function deleteBahanBakuUsage($usageId)
     {
         try {
+            $usage = $this->pesananBahanUsageModel->find($usageId);
+            
+            if (!$usage) {
+                return $this->response->setJSON([
+                    'status' => 'error',
+                    'message' => 'Data tidak ditemukan'
+                ]);
+            }
+            
             $deleted = $this->pesananBahanUsageModel->delete($usageId);
             
             if ($deleted) {
+                $this->updateBahanBakuStock($usage['bahan_baku_id'], $usage['quantity_used']);
+                
                 return $this->response->setJSON([
                     'status' => 'success',
                     'message' => 'Penggunaan bahan baku berhasil dihapus'
@@ -460,7 +478,7 @@ class PesananController extends BaseController
             } else {
                 return $this->response->setJSON([
                     'status' => 'error',
-                    'message' => 'Data tidak ditemukan'
+                    'message' => 'Gagal menghapus data'
                 ]);
             }
         } catch (\Exception $e) {
@@ -469,6 +487,25 @@ class PesananController extends BaseController
                 'status' => 'error',
                 'message' => 'Terjadi kesalahan saat menghapus data'
             ]);
+        }
+    }
+
+    private function updateBahanBakuStock($bahanBakuId, $stockChange)
+    {
+        try {
+            $bahanBakuModel = new \App\Models\BahanBakuModel();
+            $bahanBaku = $bahanBakuModel->find($bahanBakuId);
+            
+            if ($bahanBaku) {
+                $currentStock = $bahanBaku['stok'] ?? 0;
+                $newStock = max(0, $currentStock + $stockChange);
+                
+                $bahanBakuModel->update($bahanBakuId, ['stok' => $newStock]);
+                
+                log_message('info', "Updated bahan_baku stock: ID={$bahanBakuId}, change={$stockChange}, new_stock={$newStock}");
+            }
+        } catch (\Exception $e) {
+            log_message('error', "Failed to update bahan_baku stock: " . $e->getMessage());
         }
     }
 }

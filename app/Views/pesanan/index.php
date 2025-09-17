@@ -82,6 +82,7 @@
                             <th>Nama Pembeli</th>
                             <th>Source</th>
                             <th>Status</th>
+                            <th>Bahan Baku</th>
                             <th>Total Harga</th>
                             <th>Tanggal</th>
                             <th>Aksi</th>
@@ -90,7 +91,7 @@
                     <tbody>
                     <?php if (empty($pesanan)): ?>
                             <tr class="no-data-row">
-                                <td colspan="7" class="no-data-cell">
+                                <td colspan="8" class="no-data-cell">
                                     <div class="no-data">
                                         <div class="no-data-icon">📊</div>
                                         <p>Tidak ada data.</p>
@@ -129,6 +130,17 @@
                                             <span style="color: <?= $statusColors[$status] ?>; font-weight: 600;">
                                                 <?= $statusLabels[$status] ?>
                                             </span>
+                                        </td>
+                                        <td>
+                                            <?php if (isset($item['bahan_baku_usage_count']) && $item['bahan_baku_usage_count'] > 0): ?>
+                                                <span style="color: #28a745; font-weight: 600;">
+                                                    ✅ Sudah (<?= $item['bahan_baku_usage_count'] ?>)
+                                                </span>
+                                            <?php else: ?>
+                                                <span style="color: #dc3545; font-weight: 600;">
+                                                    ❌ Belum
+                                                </span>
+                                            <?php endif; ?>
                                         </td>
                                         <td>Rp <?php echo number_format($item['total_harga'], 0, ',', '.'); ?></td>
                                         <td><?php echo date('Y-m-d', strtotime($item['tanggal_pesanan'])); ?></td>
