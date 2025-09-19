@@ -35,6 +35,8 @@ class ProdukController extends BaseController
     {
         $nama_produk = $this->request->getPost('nama_produk');
         $harga_produk = $this->request->getPost('harga_produk');
+        $biaya_pajak_persen = $this->request->getPost('biaya_pajak_persen') ?? 0;
+        $komisi_affiliate_persen = $this->request->getPost('komisi_affiliate_persen') ?? 0;
         
         if (empty($nama_produk)) {
             return $this->response->setJSON(['status' => 'error', 'message' => 'Nama Produk Wajib Diisi']);
@@ -51,7 +53,9 @@ class ProdukController extends BaseController
         $data = [
             'nama_produk' => $nama_produk,
             'harga_produk' => $harga_produk,
-            'harga_final' => $harga_produk // Initially, final price equals original price
+            'harga_final' => $harga_produk, 
+            'biaya_pajak_persen' => $biaya_pajak_persen,
+            'komisi_affiliate_persen' => $komisi_affiliate_persen
         ];
 
         try {
@@ -80,6 +84,8 @@ class ProdukController extends BaseController
         $produkId = $this->request->getPost('produk_id');
         $nama_produk = $this->request->getPost('nama_produk');
         $harga_produk = $this->request->getPost('harga_produk');
+        $biaya_pajak_persen = $this->request->getPost('biaya_pajak_persen') ?? 0;
+        $komisi_affiliate_persen = $this->request->getPost('komisi_affiliate_persen') ?? 0;
         
         if (empty($produkId)) {
             return $this->response->setJSON(['status' => 'error', 'message' => 'ID Produk Wajib Diisi']);
@@ -122,7 +128,9 @@ class ProdukController extends BaseController
         $data = [
             'nama_produk' => $nama_produk,
             'harga_produk' => $harga_produk,
-            'harga_final' => $harga_final
+            'harga_final' => $harga_final,
+            'biaya_pajak_persen' => $biaya_pajak_persen,
+            'komisi_affiliate_persen' => $komisi_affiliate_persen
         ];
 
         try {

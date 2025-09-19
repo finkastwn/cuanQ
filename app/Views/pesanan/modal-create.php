@@ -71,6 +71,8 @@
                                                     data-has-promo="<?= $hasPromo ? 'true' : 'false' ?>"
                                                     data-promo-type="<?= $hasPromo ? $p['promo_type'] : '' ?>"
                                                     data-promo-value="<?= $hasPromo ? $p['promo_value'] : '' ?>"
+                                                    data-biaya-pajak="<?= $p['biaya_pajak_persen'] ?? 0 ?>"
+                                                    data-komisi-affiliate="<?= $p['komisi_affiliate_persen'] ?? 0 ?>"
                                                     data-nama="<?= esc($p['nama_produk']) ?>">
                                                 <?= esc($p['nama_produk']) ?> - 
                                                 <?php if ($hasPromo): ?>
@@ -121,6 +123,10 @@
                     <input type="checkbox" id="ada_biaya_potongan" name="ada_biaya_potongan">
                     <label for="ada_biaya_potongan" class="checkbox-label">Ada biaya potongan?</label>
                 </div>
+                <div class="potongan-checkbox" style="margin-top: 10px;">
+                    <input type="checkbox" id="promo_xtra" name="promo_xtra">
+                    <label for="promo_xtra" class="checkbox-label">Promo Xtra (-2%)</label>
+                </div>
             </div>
             
             <div id="biaya-potongan-section" style="display: none;">
@@ -146,6 +152,14 @@
                     <div class="price-row" id="processing-fee-row" style="display: none;">
                         <span>Biaya Pemrosesan:</span>
                         <span id="display-processing-fee">Rp 0</span>
+                    </div>
+                    <div class="price-row" id="promo-xtra-row" style="display: none;">
+                        <span>Promo Xtra (-2%):</span>
+                        <span id="display-promo-xtra">Rp 0</span>
+                    </div>
+                    <div class="price-row" id="komisi-affiliate-row" style="display: none;">
+                        <span>Total Komisi Affiliate:</span>
+                        <span id="display-komisi-affiliate">Rp 0</span>
                     </div>
                     <hr>
                     <div class="price-row total-row">
@@ -378,6 +392,7 @@
         const form = document.getElementById('createForm');
         const biayaPotonganCheckbox = document.getElementById('ada_biaya_potongan');
         const biayaPotonganSection = document.getElementById('biaya-potongan-section');
+        const promoXtraCheckbox = document.getElementById('promo_xtra');
         
         function showSnackbar(message, type = 'success') {
             let snackbar = document.getElementById('snackbar');
@@ -485,7 +500,11 @@
                     const originalHarga = parseInt(selectedOption.dataset.originalHarga) || 0;
                     const promoType = selectedOption.dataset.promoType;
                     const promoValue = selectedOption.dataset.promoValue;
+                    const biayaPajak = parseFloat(selectedOption.dataset.biayaPajak) || 0;
                     
+                    if (biayaPotonganCheckbox.checked && biayaPajak > 0) {
+                        adminPersenInput.value = biayaPajak;
+                    }
                     if (hasPromo) {
                         hargaInput.value = harga.toLocaleString('id-ID');
                         const priceWrapper = hargaInput.parentElement;
@@ -524,6 +543,7 @@
                 } else {
                     hargaInput.value = '';
                     subtotalInput.value = '';
+                    adminPersenInput.value = '0';
                     const priceWrapper = hargaInput.parentElement;
                     const promoIndicator = priceWrapper.querySelector('.promo-indicator');
                     const originalPriceSpan = priceWrapper.querySelector('.original-price');
@@ -564,10 +584,12 @@
             const produkCards = produkList.querySelectorAll('.produk-card');
             let subtotal = 0;
             let totalBiayaAdmin = 0;
+            let totalKomisiAffiliate = 0;
             
             produkCards.forEach(card => {
                 const subtotalInput = card.querySelector('.produk-subtotal');
                 const adminPersenInput = card.querySelector('.admin-persen');
+                const produkSelect = card.querySelector('.produk-select');
                 
                 const produkSubtotal = parseInt(subtotalInput.value.replace(/\D/g, '')) || 0;
                 subtotal += produkSubtotal;
@@ -577,17 +599,36 @@
                     const biayaAdmin = (produkSubtotal * adminPersen) / 100;
                     totalBiayaAdmin += biayaAdmin;
                 }
+                
+                const selectedOption = produkSelect.options[produkSelect.selectedIndex];
+                if (selectedOption && selectedOption.value) {
+                    const komisiAffiliate = parseFloat(selectedOption.dataset.komisiAffiliate) || 0;
+                    if (komisiAffiliate > 0) {
+                        const komisiAmount = (produkSubtotal * komisiAffiliate) / 100;
+                        totalKomisiAffiliate += komisiAmount;
+                    }
+                }
             });
             
             const biayaPemrosesan = biayaPotonganCheckbox.checked ? 
                 (parseInt(document.getElementById('biaya_pemrosesan').value.replace(/\D/g, '')) || 0) : 0;
             
-            const totalHarga = subtotal - totalBiayaAdmin - biayaPemrosesan;
+            const promoXtraAmount = promoXtraCheckbox.checked ? (subtotal * 2) / 100 : 0;
+            
+            const totalHarga = subtotal - totalBiayaAdmin - biayaPemrosesan - promoXtraAmount;
             
             document.getElementById('display-subtotal').textContent = 'Rp ' + subtotal.toLocaleString('id-ID');
             document.getElementById('display-admin-fee').textContent = 'Rp ' + Math.round(totalBiayaAdmin).toLocaleString('id-ID');
             document.getElementById('display-processing-fee').textContent = 'Rp ' + biayaPemrosesan.toLocaleString('id-ID');
+            document.getElementById('display-promo-xtra').textContent = 'Rp ' + Math.round(promoXtraAmount).toLocaleString('id-ID');
+            document.getElementById('display-komisi-affiliate').textContent = 'Rp ' + Math.round(totalKomisiAffiliate).toLocaleString('id-ID');
             document.getElementById('display-total').innerHTML = '<strong>Rp ' + Math.max(0, totalHarga).toLocaleString('id-ID') + '</strong>';
+            
+            if (totalKomisiAffiliate > 0) {
+                document.getElementById('komisi-affiliate-row').style.display = 'flex';
+            } else {
+                document.getElementById('komisi-affiliate-row').style.display = 'none';
+            }
         }
         
         function formatCurrency(e) {
@@ -604,6 +645,17 @@
                 document.querySelectorAll('.biaya-admin-group').forEach(el => el.style.display = 'block');
                 document.getElementById('admin-fee-row').style.display = 'flex';
                 document.getElementById('processing-fee-row').style.display = 'flex';
+                
+                document.querySelectorAll('.produk-select').forEach(select => {
+                    const selectedOption = select.options[select.selectedIndex];
+                    if (selectedOption && selectedOption.value) {
+                        const biayaPajak = parseFloat(selectedOption.dataset.biayaPajak) || 0;
+                        if (biayaPajak > 0) {
+                            const adminPersenInput = select.closest('.produk-card').querySelector('.admin-persen');
+                            adminPersenInput.value = biayaPajak;
+                        }
+                    }
+                });
             } else {
                 biayaPotonganSection.style.display = 'none';
                 document.querySelectorAll('.biaya-admin-group').forEach(el => el.style.display = 'none');
@@ -621,6 +673,15 @@
         
         document.getElementById('biaya_pemrosesan').addEventListener('input', function(e) {
             formatCurrency(e);
+            calculateTotal();
+        });
+        
+        promoXtraCheckbox.addEventListener('change', function() {
+            if (this.checked) {
+                document.getElementById('promo-xtra-row').style.display = 'flex';
+            } else {
+                document.getElementById('promo-xtra-row').style.display = 'none';
+            }
             calculateTotal();
         });
 
@@ -708,6 +769,8 @@
                                                     data-has-promo="<?= $hasPromo ? 'true' : 'false' ?>"
                                                     data-promo-type="<?= $hasPromo ? $p['promo_type'] : '' ?>"
                                                     data-promo-value="<?= $hasPromo ? $p['promo_value'] : '' ?>"
+                                                    data-biaya-pajak="<?= $p['biaya_pajak_persen'] ?? 0 ?>"
+                                                    data-komisi-affiliate="<?= $p['komisi_affiliate_persen'] ?? 0 ?>"
                                                     data-nama="<?= esc($p['nama_produk']) ?>">
                                                 <?= esc($p['nama_produk']) ?> - 
                                                 <?php if ($hasPromo): ?>

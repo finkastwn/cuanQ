@@ -23,21 +23,29 @@ class StockService
                     pbi.harga_per_unit as hpp_per_unit,
                     pb.tanggal_pembelian,
                     pb.nama_pembelian,
-                    COALESCE(SUM(pbu.quantity_used), 0) as total_used_pesanan,
-                    COALESCE(SUM(mbu.quantity_used), 0) as total_used_manual,
-                    ((pbi.jumlah_item * pbi.isi_per_unit) - COALESCE(SUM(pbu.quantity_used), 0) - COALESCE(SUM(mbu.quantity_used), 0)) as remaining_stock
+                    COALESCE(pesanan_usage.total_used_pesanan, 0) as total_used_pesanan,
+                    COALESCE(manual_usage.total_used_manual, 0) as total_used_manual,
+                    ((pbi.jumlah_item * pbi.isi_per_unit) - COALESCE(pesanan_usage.total_used_pesanan, 0) - COALESCE(manual_usage.total_used_manual, 0)) as remaining_stock
                 FROM pembelian_bahan_items pbi
                 JOIN pembelian_bahan pb ON pb.id = pbi.pembelian_id
-                LEFT JOIN pesanan_bahan_usage pbu ON pbu.pembelian_bahan_id = pbi.pembelian_id 
-                    AND pbu.bahan_baku_id = pbi.bahan_baku_id
-                LEFT JOIN manual_bahan_usage mbu ON mbu.pembelian_bahan_id = pbi.pembelian_id 
-                    AND mbu.bahan_baku_id = pbi.bahan_baku_id
+                LEFT JOIN (
+                    SELECT pembelian_bahan_id, bahan_baku_id, SUM(quantity_used) as total_used_pesanan
+                    FROM pesanan_bahan_usage 
+                    WHERE bahan_baku_id = ?
+                    GROUP BY pembelian_bahan_id, bahan_baku_id
+                ) pesanan_usage ON pesanan_usage.pembelian_bahan_id = pbi.pembelian_id 
+                    AND pesanan_usage.bahan_baku_id = pbi.bahan_baku_id
+                LEFT JOIN (
+                    SELECT pembelian_bahan_id, bahan_baku_id, SUM(quantity_used) as total_used_manual
+                    FROM manual_bahan_usage 
+                    WHERE bahan_baku_id = ?
+                    GROUP BY pembelian_bahan_id, bahan_baku_id
+                ) manual_usage ON manual_usage.pembelian_bahan_id = pbi.pembelian_id 
+                    AND manual_usage.bahan_baku_id = pbi.bahan_baku_id
                 WHERE pbi.bahan_baku_id = ?
-                GROUP BY pbi.id, pbi.pembelian_id, pbi.bahan_baku_id, pbi.jumlah_item, pbi.isi_per_unit, pbi.harga_per_unit, 
-                         pb.tanggal_pembelian, pb.nama_pembelian
                 HAVING remaining_stock > 0
                 ORDER BY pb.tanggal_pembelian ASC, pbi.id ASC
-            ", [$bahanBakuId]);
+            ", [$bahanBakuId, $bahanBakuId, $bahanBakuId]);
             
             if ($query === false) {
                 log_message('error', 'Query failed in StockService::getAvailableStockFIFO for bahan_baku_id: ' . $bahanBakuId);

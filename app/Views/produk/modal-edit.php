@@ -29,6 +29,26 @@
                         placeholder="0"
                         required>
                 </div>
+                
+                <label for="edit_biaya_pajak_persen" class="form-label">Biaya Pajak (%)</label>
+                <input type="number" 
+                       id="edit_biaya_pajak_persen" 
+                       name="biaya_pajak_persen" 
+                       class="form-input"
+                       placeholder="0"
+                       min="0"
+                       max="100"
+                       step="0.01">
+                
+                <label for="edit_komisi_affiliate_persen" class="form-label">Komisi Affiliate (%)</label>
+                <input type="number" 
+                       id="edit_komisi_affiliate_persen" 
+                       name="komisi_affiliate_persen" 
+                       class="form-input"
+                       placeholder="0"
+                       min="0"
+                       max="100"
+                       step="0.01">
             </div>
             
             <div class="modal-actions">
@@ -42,13 +62,14 @@
 <script>
     let currentEditProductId = null;
     
-    function openEditModal(productId, productName, productPrice) {
+    function openEditModal(productId, productName, productPrice, biayaPajakPersen = 0, komisiAffiliatePersen = 0) {
         currentEditProductId = productId;
         
-        // Set form values
         document.getElementById('edit_produk_id').value = productId;
         document.getElementById('edit_nama_produk').value = productName;
         document.getElementById('edit_harga_produk').value = parseInt(productPrice).toLocaleString('id-ID');
+        document.getElementById('edit_biaya_pajak_persen').value = biayaPajakPersen;
+        document.getElementById('edit_komisi_affiliate_persen').value = komisiAffiliatePersen;
         
         document.getElementById('editModal').style.display = 'block';
     }
@@ -93,6 +114,12 @@
         
         const hargaProduk = document.getElementById('edit_harga_produk').value.replace(/\./g, '');
         formData.append('harga_produk', hargaProduk);
+        
+        const biayaPajakPersen = document.getElementById('edit_biaya_pajak_persen').value || 0;
+        formData.append('biaya_pajak_persen', biayaPajakPersen);
+        
+        const komisiAffiliatePersen = document.getElementById('edit_komisi_affiliate_persen').value || 0;
+        formData.append('komisi_affiliate_persen', komisiAffiliatePersen);
         
         fetch('<?= base_url('produk/update') ?>', {
             method: 'POST',

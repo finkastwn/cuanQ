@@ -82,6 +82,7 @@ class PesananController extends BaseController
         $tanggalPesanan = $this->request->getPost('tanggal_pesanan');
         $adaBiayaPotongan = $this->request->getPost('ada_biaya_potongan') ? 1 : 0;
         $biayaPemrosesan = $this->request->getPost('biaya_pemrosesan');
+        $promoXtra = $this->request->getPost('promo_xtra') ? 1 : 0;
         
         if (empty($namaPembeli)) {
             return $this->response->setJSON(['status' => 'error', 'message' => 'Nama Pembeli Wajib Diisi']);
@@ -135,7 +136,9 @@ class PesananController extends BaseController
                 ];
             }
             
-            $totalHarga = $subtotal - $totalBiayaAdmin - ($biayaPemrosesan ?? 0);
+            $promoXtraAmount = $promoXtra ? ($subtotal * 2) / 100 : 0;
+            
+            $totalHarga = $subtotal - $totalBiayaAdmin - ($biayaPemrosesan ?? 0) - $promoXtraAmount;
             $totalHarga = max(0, $totalHarga);
             
             $dataPesanan = [
@@ -144,6 +147,7 @@ class PesananController extends BaseController
                 'tanggal_pesanan' => $tanggalPesanan,
                 'status' => 'pesanan_baru',
                 'ada_biaya_potongan' => $adaBiayaPotongan,
+                'promo_xtra' => $promoXtra,
                 'biaya_pemrosesan' => $biayaPemrosesan ?? 0,
                 'subtotal' => $subtotal,
                 'total_biaya_admin' => $totalBiayaAdmin,

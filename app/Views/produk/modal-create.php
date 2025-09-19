@@ -27,6 +27,26 @@
                         placeholder="0"
                         required>
                 </div>
+                
+                <label for="biaya_pajak_persen" class="form-label">Biaya Pajak (%)</label>
+                <input type="number" 
+                       id="biaya_pajak_persen" 
+                       name="biaya_pajak_persen" 
+                       class="form-input"
+                       placeholder="0"
+                       min="0"
+                       max="100"
+                       step="0.01">
+                
+                <label for="komisi_affiliate_persen" class="form-label">Komisi Affiliate (%)</label>
+                <input type="number" 
+                       id="komisi_affiliate_persen" 
+                       name="komisi_affiliate_persen" 
+                       class="form-input"
+                       placeholder="0"
+                       min="0"
+                       max="100"
+                       step="0.01">
             </div>
             
             <div class="modal-actions">
@@ -76,6 +96,12 @@
         
         const hargaProduk = document.getElementById('harga_produk').value.replace(/\./g, '');
         formData.append('harga_produk', hargaProduk);
+        
+        const biayaPajakPersen = document.getElementById('biaya_pajak_persen').value || 0;
+        formData.append('biaya_pajak_persen', biayaPajakPersen);
+        
+        const komisiAffiliatePersen = document.getElementById('komisi_affiliate_persen').value || 0;
+        formData.append('komisi_affiliate_persen', komisiAffiliatePersen);
         
         fetch('<?= base_url('produk/store') ?>', {
             method: 'POST',
