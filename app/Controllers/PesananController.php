@@ -29,15 +29,29 @@ class PesananController extends BaseController
 
     public function index()
     {
-        $pesananList = $this->pesananModel
+        $search = $this->request->getGet('search');
+        $statusFilter = $this->request->getGet('status');
+        
+        $builder = $this->pesananModel
                         ->select('pesanan.*, COUNT(pbu.id) as bahan_baku_usage_count')
                         ->join('pesanan_bahan_usage pbu', 'pbu.pesanan_id = pesanan.id', 'left')
-                        ->groupBy('pesanan.id')
-                        ->orderBy('pesanan.tanggal_pesanan', 'DESC')
-                        ->findAll();
+                        ->groupBy('pesanan.id');
+        
+        if (!empty($search)) {
+            $builder->like('pesanan.nama_pembeli', $search);
+        }
+        
+        if (!empty($statusFilter) && $statusFilter !== 'all') {
+            $builder->where('pesanan.status', $statusFilter);
+        }
+        
+        $pesananList = $builder->orderBy('pesanan.tanggal_pesanan', 'DESC')->findAll();
         
         $data['pesanan'] = $pesananList;
         $data['produk'] = $this->produkModel->findAll();
+        $data['search'] = $search;
+        $data['statusFilter'] = $statusFilter;
+        
         return view('pesanan/index', $data);
     }
     
@@ -268,7 +282,14 @@ class PesananController extends BaseController
         if ($newStatus === 'dicairkan' && $oldStatus !== 'dicairkan') {
             log_message('info', "Creating 'dicairkan' transactions for pesanan {$pesananId}");
             
-            if ($oldStatus === 'selesai') {
+            $existingShopeeTransaction = $this->manualTransactionModel
+                ->where('kategori', 'pesanan')
+                ->where('reference_id', $pesananId)
+                ->where('source_money', 'shopee_pocket')
+                ->where('type', 'pemasukan')
+                ->first();
+            
+            if ($existingShopeeTransaction) {
                 log_message('info', "Creating shopee withdrawal transaction for pesanan {$pesananId}");
                 $this->createFinancialTransaction(
                     $pesananData['tanggal_pesanan'],
@@ -368,7 +389,8 @@ class PesananController extends BaseController
     public function getAvailableStock($bahanBakuId)
     {
         try {
-            $stock = $this->pesananBahanUsageModel->getAvailableStockFIFO($bahanBakuId);
+            $stockService = new \App\Libraries\StockService();
+            $stock = $stockService->getAvailableStockFIFO($bahanBakuId);
             return $this->response->setJSON($stock);
         } catch (\Exception $e) {
             return $this->response->setJSON([]);
@@ -403,7 +425,8 @@ class PesananController extends BaseController
 
             log_message('info', "Attempting to allocate stock: pesanan_id={$pesananId}, bahan_baku_id={$bahanBakuId}, quantity={$quantityUsed}");
             
-            $allocations = $this->pesananBahanUsageModel->allocateStockFIFO($pesananId, $bahanBakuId, $quantityUsed);
+            $stockService = new \App\Libraries\StockService();
+            $allocations = $stockService->allocateStockForPesanan($pesananId, $bahanBakuId, $quantityUsed);
             
             log_message('info', "Allocations generated: " . json_encode($allocations));
 

@@ -40,23 +40,6 @@
             text-align: center;
         }
         
-        .source-badge {
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 0.8em;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
-        
-        .source-shopee { background-color: #ff6b35; color: white; }
-        .source-tiktok { background-color: #000; color: white; }
-        .source-facebook { background-color: #1877f2; color: white; }
-        .source-twitter { background-color: #1da1f2; color: white; }
-        .source-instagram { background-color: #e4405f; color: white; }
-        .source-whatsapp { background-color: #25d366; color: white; }
-        .source-offline { background-color: #6c757d; color: white; }
-        .source-other { background-color: #17a2b8; color: white; }
-        
         tr {
             cursor: pointer;
         }
@@ -147,6 +130,49 @@
             </div>
         </div>
         
+        <div class="search-filter-section" style="margin-bottom: 20px; padding: 20px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <form method="GET" action="<?= base_url('pesanan') ?>" style="display: flex; gap: 15px; align-items: end; flex-wrap: wrap;">
+                <div style="flex: 1; min-width: 250px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: 600; color: <?= MAIN_DARK_COLOR; ?>;">🔍 Cari Nama Pembeli</label>
+                    <input type="text" name="search" value="<?= esc($search ?? '') ?>" placeholder="Masukkan nama pembeli..." 
+                           style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px;">
+                </div>
+                <div style="min-width: 180px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: 600; color: <?= MAIN_DARK_COLOR; ?>;">📊 Filter Status</label>
+                    <select name="status" style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px;">
+                        <option value="all" <?= ($statusFilter ?? '') === 'all' ? 'selected' : '' ?>>🔄 Semua Status</option>
+                        <option value="pesanan_baru" <?= ($statusFilter ?? '') === 'pesanan_baru' ? 'selected' : '' ?>>🆕 Pesanan Baru</option>
+                        <option value="dalam_proses" <?= ($statusFilter ?? '') === 'dalam_proses' ? 'selected' : '' ?>>⏳ Dalam Proses</option>
+                        <option value="dikirim" <?= ($statusFilter ?? '') === 'dikirim' ? 'selected' : '' ?>>🚚 Dikirim</option>
+                        <option value="selesai" <?= ($statusFilter ?? '') === 'selesai' ? 'selected' : '' ?>>✅ Selesai</option>
+                        <option value="dicairkan" <?= ($statusFilter ?? '') === 'dicairkan' ? 'selected' : '' ?>>💰 Dicairkan</option>
+                    </select>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button type="submit" style="padding: 10px 20px; background: linear-gradient(135deg, <?= MAIN_COLOR; ?>, <?= MAIN_DARK_COLOR; ?>); color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer;">
+                        🔍 Filter
+                    </button>
+                    <a href="<?= base_url('pesanan') ?>" style="padding: 10px 20px; background: #6c757d; color: white; text-decoration: none; border-radius: 6px; font-weight: 600; display: inline-block;">
+                        🔄 Reset
+                    </a>
+                </div>
+            </form>
+        </div>
+        
+        <?php if (!empty($search) || !empty($statusFilter)): ?>
+        <div style="margin-bottom: 15px; padding: 10px 15px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid <?= MAIN_COLOR; ?>;">
+            <span style="color: <?= MAIN_DARK_COLOR; ?>; font-weight: 600;">
+                📊 Menampilkan <?= count($pesanan) ?> pesanan
+                <?php if (!empty($search)): ?>
+                    dengan nama pembeli mengandung "<?= esc($search) ?>"
+                <?php endif; ?>
+                <?php if (!empty($statusFilter) && $statusFilter !== 'all'): ?>
+                    dengan status "<?= ucfirst(str_replace('_', ' ', $statusFilter)) ?>"
+                <?php endif; ?>
+            </span>
+        </div>
+        <?php endif; ?>
+        
         <div class="table-container">
                 <table class="table">
                     <thead>
@@ -156,7 +182,6 @@
                             </th>
                             <th>No</th>
                             <th>Nama Pembeli</th>
-                            <th>Source</th>
                             <th>Status</th>
                             <th>Bahan Baku</th>
                             <th>Total Harga</th>
@@ -184,19 +209,14 @@
                                         <td onclick="window.open('<?= base_url('pesanan/detail/' . $item['id']) ?>', '_blank')"><?php echo $no++; ?></td>
                                         <td onclick="window.open('<?= base_url('pesanan/detail/' . $item['id']) ?>', '_blank')"><?php echo esc($item['nama_pembeli']); ?></td>
                                         <td onclick="window.open('<?= base_url('pesanan/detail/' . $item['id']) ?>', '_blank')">
-                                            <span class="source-badge source-<?= $item['source_penjualan'] ?>">
-                                                <?= ucfirst($item['source_penjualan']) ?>
-                                            </span>
-                                        </td>
-                                        <td onclick="window.open('<?= base_url('pesanan/detail/' . $item['id']) ?>', '_blank')">
                                             <?php 
                                             $status = $item['status'] ?? 'pesanan_baru';
                                             $statusLabels = [
-                                                'pesanan_baru' => '🆕 Baru',
-                                                'dalam_proses' => '⏳ Proses', 
-                                                'dikirim' => '🚚 Dikirim',
-                                                'selesai' => '✅ Selesai',
-                                                'dicairkan' => '💰 Dicairkan'
+                                                'pesanan_baru' => '🆕',
+                                                'dalam_proses' => '⏳', 
+                                                'dikirim' => '🚚',
+                                                'selesai' => '✅',
+                                                'dicairkan' => '💰'
                                             ];
                                             $statusColors = [
                                                 'pesanan_baru' => '#6c757d',
@@ -213,11 +233,11 @@
                                         <td onclick="window.open('<?= base_url('pesanan/detail/' . $item['id']) ?>', '_blank')">
                                             <?php if (isset($item['bahan_baku_usage_count']) && $item['bahan_baku_usage_count'] > 0): ?>
                                                 <span style="color: #28a745; font-weight: 600;">
-                                                    ✅ Sudah (<?= $item['bahan_baku_usage_count'] ?>)
+                                                    ✅
                                                 </span>
                                             <?php else: ?>
                                                 <span style="color: #dc3545; font-weight: 600;">
-                                                    ❌ Belum
+                                                    ❌
                                                 </span>
                                             <?php endif; ?>
                                         </td>

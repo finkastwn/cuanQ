@@ -55,7 +55,8 @@ class ManualBahanUsageController extends BaseController
             $db = \Config\Database::connect();
             $db->transStart();
             
-            $allocations = $this->manualBahanUsageModel->allocateStockFIFO(
+            $stockService = new \App\Libraries\StockService();
+            $allocations = $stockService->allocateStockForManualUsage(
                 $bahanBakuId, 
                 $quantityUsed, 
                 $purpose, 
@@ -180,7 +181,8 @@ class ManualBahanUsageController extends BaseController
     public function getAvailableStock($bahanBakuId)
     {
         try {
-            $stock = $this->manualBahanUsageModel->getAvailableStockFIFO($bahanBakuId);
+            $stockService = new \App\Libraries\StockService();
+            $stock = $stockService->getAvailableStockFIFO($bahanBakuId);
             return $this->response->setJSON($stock);
         } catch (\Exception $e) {
             log_message('error', 'Error getting available stock: ' . $e->getMessage());
