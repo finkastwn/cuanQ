@@ -45,7 +45,7 @@ class PesananController extends BaseController
             $builder->where('pesanan.status', $statusFilter);
         }
         
-        $pesananList = $builder->orderBy('pesanan.tanggal_pesanan', 'DESC')->findAll();
+        $pesananList = $builder->orderBy('pesanan.tanggal_pesanan DESC, pesanan.created_at DESC')->findAll();;
         
         $data['pesanan'] = $pesananList;
         $data['produk'] = $this->produkModel->findAll();
