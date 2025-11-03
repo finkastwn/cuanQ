@@ -82,6 +82,8 @@ class PesananController extends BaseController
         $tanggalPesanan = $this->request->getPost('tanggal_pesanan');
         $adaBiayaPotongan = $this->request->getPost('ada_biaya_potongan') ? 1 : 0;
         $biayaPemrosesan = $this->request->getPost('biaya_pemrosesan');
+        $biayaTambahanNama = $this->request->getPost('biaya_tambahan_nama');
+        $biayaTambahanNominal = $this->request->getPost('biaya_tambahan_nominal');
         $promoXtra = $this->request->getPost('promo_xtra') ? 1 : 0;
         
         if (empty($namaPembeli)) {
@@ -136,6 +138,16 @@ class PesananController extends BaseController
                 ];
             }
             
+            if ($adaBiayaPotongan) {
+                $sumTambahan = 0;
+                if (is_array($biayaTambahanNominal)) {
+                    foreach ($biayaTambahanNominal as $val) {
+                        $sumTambahan += intval($val);
+                    }
+                }
+                $biayaPemrosesan = 1250 + $sumTambahan;
+            }
+
             $promoXtraAmount = $promoXtra ? ($subtotal * 4.5) / 100 : 0;
             
             $totalHarga = $subtotal - $totalBiayaAdmin - ($biayaPemrosesan ?? 0) - $promoXtraAmount;

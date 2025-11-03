@@ -131,11 +131,9 @@
             
             <div id="biaya-potongan-section" style="display: none;">
                 <div class="form-group">
-                    <label for="biaya_pemrosesan" class="form-label">Biaya Pemrosesan</label>
-                    <div class="currency-input-wrapper">
-                        <span class="currency-prefix">Rp</span>
-                        <input type="text" id="biaya_pemrosesan" name="biaya_pemrosesan" class="form-input currency-input" value="0">
-                    </div>
+                    <label class="form-label">Biaya Tambahan</label>
+                    <div id="biaya-tambahan-list"></div>
+                    <button type="button" id="addBiayaTambahanBtn" class="create-btn" style="margin-top: 10px;">Tambah Biaya</button>
                 </div>
             </div>
 
@@ -367,6 +365,23 @@
         from { top: 30px; opacity: 1; }
         to { top: 0; opacity: 0; }
     }
+
+    .biaya-row {
+        display: grid;
+        grid-template-columns: 2fr 1.5fr auto;
+        gap: 10px;
+        align-items: end;
+        margin-top: 10px;
+    }
+    .biaya-row .remove-biaya-btn {
+        background: #dc3545;
+        color: #fff;
+        border: none;
+        border-radius: 6px;
+        height: 38px;
+        padding: 0 12px;
+        cursor: pointer;
+    }
 </style>
 
 <script>
@@ -393,6 +408,8 @@
         const biayaPotonganCheckbox = document.getElementById('ada_biaya_potongan');
         const biayaPotonganSection = document.getElementById('biaya-potongan-section');
         const promoXtraCheckbox = document.getElementById('promo_xtra');
+        const biayaTambahanList = document.getElementById('biaya-tambahan-list');
+        const addBiayaTambahanBtn = document.getElementById('addBiayaTambahanBtn');
         
         function showSnackbar(message, type = 'success') {
             let snackbar = document.getElementById('snackbar');
@@ -466,6 +483,50 @@
             
             produkList.appendChild(newProdukCard);
             attachProdukListeners(newProdukCard);
+        }
+
+        function addBiayaRow(nameValue = '', nominalValue = '') {
+            const row = document.createElement('div');
+            row.className = 'biaya-row';
+            row.innerHTML = `
+                <div>
+                    <label class="form-label">Nama Biaya</label>
+                    <input type="text" name="biaya_tambahan_nama[]" class="form-input" placeholder="cth: Ongkir, Jasa Kurir" value="${nameValue}">
+                </div>
+                <div>
+                    <label class="form-label">Nominal</label>
+                    <div class="currency-input-wrapper">
+                        <span class="currency-prefix">Rp</span>
+                        <input type="text" name="biaya_tambahan_nominal[]" class="form-input currency-input biaya-nominal-input" value="${nominalValue}">
+                    </div>
+                </div>
+                <div>
+                    <button type="button" class="remove-biaya-btn">Hapus</button>
+                </div>
+            `;
+
+            const nominalInput = row.querySelector('.biaya-nominal-input');
+            nominalInput.addEventListener('input', function(e) {
+                formatCurrency(e);
+                calculateTotal();
+            });
+
+            const removeBtn = row.querySelector('.remove-biaya-btn');
+            removeBtn.addEventListener('click', function() {
+                row.remove();
+                calculateTotal();
+            });
+
+            biayaTambahanList.appendChild(row);
+        }
+
+        function getTotalBiayaTambahan() {
+            const inputs = biayaTambahanList.querySelectorAll('input[name="biaya_tambahan_nominal[]"]');
+            let total = 0;
+            inputs.forEach(inp => {
+                total += parseInt((inp.value || '').replace(/\D/g, '')) || 0;
+            });
+            return total;
         }
 
         function removeProdukCard(produkCard) {
@@ -610,10 +671,9 @@
                 }
             });
             
-            const biayaPemrosesan = biayaPotonganCheckbox.checked ? 
-                (parseInt(document.getElementById('biaya_pemrosesan').value.replace(/\D/g, '')) || 0) : 0;
+            const biayaPemrosesan = biayaPotonganCheckbox.checked ? (1250 + getTotalBiayaTambahan()) : 0;
             
-            const promoXtraAmount = promoXtraCheckbox.checked ? (subtotal * 2) / 100 : 0;
+            const promoXtraAmount = promoXtraCheckbox.checked ? (subtotal * 4.5) / 100 : 0;
             
             const totalHarga = subtotal - totalBiayaAdmin - biayaPemrosesan - promoXtraAmount;
             
@@ -645,8 +705,11 @@
                 document.querySelectorAll('.biaya-admin-group').forEach(el => el.style.display = 'block');
                 document.getElementById('admin-fee-row').style.display = 'flex';
                 document.getElementById('processing-fee-row').style.display = 'flex';
-                document.getElementById('biaya_pemrosesan').value = '1250';
-                
+
+                if (biayaTambahanList.children.length === 0) {
+                    addBiayaRow();
+                }
+
                 document.querySelectorAll('.produk-select').forEach(select => {
                     const selectedOption = select.options[select.selectedIndex];
                     if (selectedOption && selectedOption.value) {
@@ -662,20 +725,17 @@
                 document.querySelectorAll('.biaya-admin-group').forEach(el => el.style.display = 'none');
                 document.getElementById('admin-fee-row').style.display = 'none';
                 document.getElementById('processing-fee-row').style.display = 'none';
-                document.getElementById('biaya_pemrosesan').value = '0';
+                biayaTambahanList.innerHTML = '';
                 document.querySelectorAll('.admin-persen').forEach(input => input.value = '0');
             }
             calculateTotal();
         });
 
         addProdukBtn.addEventListener('click', createProdukCard);
+        addBiayaTambahanBtn.addEventListener('click', function() { addBiayaRow(); });
         
         attachProdukListeners(produkList.querySelector('.produk-card'));
         
-        document.getElementById('biaya_pemrosesan').addEventListener('input', function(e) {
-            formatCurrency(e);
-            calculateTotal();
-        });
         
         promoXtraCheckbox.addEventListener('change', function() {
             if (this.checked) {
@@ -706,9 +766,23 @@
             }
             
             const formData = new FormData(form);
-            
-            const biayaPemrosesanRaw = document.getElementById('biaya_pemrosesan').value.replace(/\D/g, '');
-            formData.set('biaya_pemrosesan', biayaPemrosesanRaw);
+
+            const nominalInputs = biayaTambahanList.querySelectorAll('input[name="biaya_tambahan_nominal[]"]');
+            const nameInputs = biayaTambahanList.querySelectorAll('input[name="biaya_tambahan_nama[]"]');
+            let totalBiayaTambahan = 0;
+           
+            nominalInputs.forEach((inp, idx) => {
+                const raw = (inp.value || '').replace(/\D/g, '');
+                const clean = raw ? parseInt(raw) : 0;
+                const nameVal = (nameInputs[idx]?.value || '').trim();
+                if (nameVal !== '' || clean > 0) {
+                    formData.append('biaya_tambahan_nama[]', nameVal);
+                    formData.append('biaya_tambahan_nominal[]', String(clean));
+                    totalBiayaTambahan += clean;
+                }
+            });
+            const baseProcessing = biayaPotonganCheckbox.checked ? 1250 : 0;
+            formData.set('biaya_pemrosesan', String(baseProcessing + totalBiayaTambahan));
             
             console.log('Sending data to server...');
             
