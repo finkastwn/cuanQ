@@ -75,6 +75,38 @@ class PesananController extends BaseController
         return view('pesanan/detail', $data);
     }
 
+    public function updatePrintInfo()
+    {
+        $pesananId = (int) $this->request->getPost('pesanan_id');
+        $printPages = (int) $this->request->getPost('print_pages');
+        if ($pesananId <= 0 || $printPages < 0) {
+            return $this->response->setJSON(['status' => 'error', 'message' => 'Data tidak valid']);
+        }
+
+        $existing = $this->pesananModel->find($pesananId);
+        if (!$existing) {
+            return $this->response->setJSON(['status' => 'error', 'message' => 'Pesanan tidak ditemukan']);
+        }
+
+        $printCost = $printPages * 500;
+        $saved = $this->pesananModel->update($pesananId, [
+            'print_pages' => $printPages,
+            'print_cost' => $printCost,
+        ]);
+
+        if (!$saved) {
+            return $this->response->setJSON(['status' => 'error', 'message' => 'Gagal menyimpan biaya print']);
+        }
+
+        return $this->response->setJSON([
+            'status' => 'success',
+            'data' => [
+                'print_pages' => $printPages,
+                'print_cost' => $printCost,
+            ]
+        ]);
+    }
+
     public function store()
     {
         $namaPembeli = $this->request->getPost('nama_pembeli');

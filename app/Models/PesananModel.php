@@ -19,6 +19,8 @@ class PesananModel extends Model
         'subtotal',
         'total_biaya_admin',
         'total_harga',
+        'print_pages',
+        'print_cost',
     ];
 
     protected $useTimestamps = true;

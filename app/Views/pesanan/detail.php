@@ -287,6 +287,29 @@
             </div>
             <?php endif; ?>
 
+            <div class="items-section">
+                <div class="items-header">
+                    🖨️ Biaya Print (Rp 500/lembar)
+                </div>
+                <div style="padding:20px; display:grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 15px; align-items: end;">
+                    <div>
+                        <label class="info-label">Jumlah Lembar</label>
+                        <input type="number" id="printPagesInput" class="form-input" min="0" value="<?= (int) ($pesanan['print_pages'] ?? 0) ?>" placeholder="0">
+                    </div>
+                    <div>
+                        <label class="info-label">Tarif per Lembar</label>
+                        <div class="info-value">Rp <span id="printPerPage">500</span></div>
+                    </div>
+                    <div>
+                        <label class="info-label">Total Biaya Print</label>
+                        <div class="info-value" style="font-weight:600; color: <?= MAIN_DARK_COLOR; ?>;">Rp <span id="printTotal"><?= number_format((int) ($pesanan['print_cost'] ?? 0), 0, ',', '.') ?></span></div>
+                    </div>
+                    <div>
+                        <button id="savePrintBtn" class="btn-save" style="width:100%;">Simpan</button>
+                    </div>
+                </div>
+            </div>
+
             <div class="summary-section">
                 <h3 style="margin-top: 0; color: <?= MAIN_DARK_COLOR; ?>;">💰 Ringkasan Pembayaran</h3>
                 
@@ -328,13 +351,17 @@
                     <span>Total HPP Bahan Baku:</span>
                     <span style="color: #dc3545;">Rp <?= number_format($total_hpp, 0, ',', '.') ?></span>
                 </div>
+                <div class="summary-row" id="hpp-jasa-row" style="display: none;">
+                    <span>Total HPP Jasa (Print):</span>
+                    <span style="color: #dc3545;">Rp <span id="hppJasaAmount">0</span></span>
+                </div>
                 
                 <div class="summary-row">
                     <span>Keuntungan Bersih:</span>
-                    <span style="color: <?= $total_untung > 0 ? SUCCESS : '#dc3545' ?>; font-size: 1.3em;">
-                        Rp <?= number_format($total_untung, 0, ',', '.') ?>
+                    <span id="keuntunganBersihWrap" style="color: <?= $total_untung > 0 ? SUCCESS : '#dc3545' ?>; font-size: 1.3em;">
+                        Rp <span id="keuntunganBersihAmount"><?= number_format($total_untung, 0, ',', '.') ?></span>
                         <?php if ($total_hpp > 0): ?>
-                            (<?= number_format(($total_untung / $pesanan['total_harga']) * 100, 1) ?>%)
+                            (<span id="keuntunganBersihPercent"><?= number_format(($total_untung / $pesanan['total_harga']) * 100, 1) ?></span>%)
                         <?php endif; ?>
                     </span>
                 </div>
@@ -782,6 +809,71 @@
         document.getElementById('bahanBakuModal').addEventListener('click', function(e) {
             if (e.target === this) {
                 closeBahanBakuModal();
+            }
+        });
+
+        const PRINT_PER_PAGE = 500;
+        const printPagesInput = document.getElementById('printPagesInput');
+        const printPerPageSpan = document.getElementById('printPerPage');
+        const printTotalSpan = document.getElementById('printTotal');
+        const savePrintBtn = document.getElementById('savePrintBtn');
+        const hppJasaRow = document.getElementById('hpp-jasa-row');
+        const hppJasaAmount = document.getElementById('hppJasaAmount');
+        const keuntunganBersihAmount = document.getElementById('keuntunganBersihAmount');
+        const keuntunganBersihPercent = document.getElementById('keuntunganBersihPercent');
+        const keuntunganBersihWrap = document.getElementById('keuntunganBersihWrap');
+        const BASE_NET_PROFIT = <?= (int) $total_untung ?>; 
+        const TOTAL_HARGA = <?= (int) $pesanan['total_harga'] ?>;
+        function formatNumberId(x){ return new Intl.NumberFormat('id-ID').format(x || 0); }
+        printPerPageSpan.textContent = formatNumberId(PRINT_PER_PAGE);
+        function updatePrintTotal(){
+            const pages = parseInt(printPagesInput.value || '0');
+            const total = Math.max(0, pages) * PRINT_PER_PAGE;
+            printTotalSpan.textContent = formatNumberId(total);
+            if (total > 0) {
+                hppJasaRow.style.display = 'flex';
+            } else {
+                hppJasaRow.style.display = 'none';
+            }
+            hppJasaAmount.textContent = formatNumberId(total);
+
+            const adjustedNet = BASE_NET_PROFIT - total;
+            keuntunganBersihAmount.textContent = formatNumberId(adjustedNet);
+            if (typeof TOTAL_HARGA === 'number' && TOTAL_HARGA > 0 && keuntunganBersihPercent) {
+                const pct = (adjustedNet / TOTAL_HARGA) * 100;
+                keuntunganBersihPercent.textContent = (isFinite(pct) ? pct.toFixed(1) : '0.0');
+            }
+            if (adjustedNet > 0) {
+                keuntunganBersihWrap.style.color = '<?= SUCCESS; ?>';
+            } else {
+                keuntunganBersihWrap.style.color = '#dc3545';
+            }
+        }
+        printPagesInput.addEventListener('input', updatePrintTotal);
+        updatePrintTotal();
+
+        savePrintBtn.addEventListener('click', async function() {
+            const pages = parseInt(printPagesInput.value || '0');
+            try {
+                const res = await fetch('<?= base_url('pesanan/update-print-info') ?>', {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: new URLSearchParams({
+                        pesanan_id: String(pesananId),
+                        print_pages: String(Math.max(0, pages))
+                    })
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    showSnackbar('Biaya print berhasil disimpan', 'success');
+                } else {
+                    showSnackbar(data.message || 'Gagal menyimpan biaya print', 'error');
+                }
+            } catch (e) {
+                showSnackbar('Gagal menyimpan biaya print', 'error');
             }
         });
     </script>
