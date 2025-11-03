@@ -125,7 +125,7 @@
                 </div>
                 <div class="potongan-checkbox" style="margin-top: 10px;">
                     <input type="checkbox" id="promo_xtra" name="promo_xtra">
-                    <label for="promo_xtra" class="checkbox-label">Promo Xtra (-2%)</label>
+                    <label for="promo_xtra" class="checkbox-label">Promo Xtra (-4.5%)</label>
                 </div>
             </div>
             
@@ -154,7 +154,7 @@
                         <span id="display-processing-fee">Rp 0</span>
                     </div>
                     <div class="price-row" id="promo-xtra-row" style="display: none;">
-                        <span>Promo Xtra (-2%):</span>
+                        <span>Promo Xtra (-4.5%):</span>
                         <span id="display-promo-xtra">Rp 0</span>
                     </div>
                     <div class="price-row" id="komisi-affiliate-row" style="display: none;">
@@ -645,6 +645,7 @@
                 document.querySelectorAll('.biaya-admin-group').forEach(el => el.style.display = 'block');
                 document.getElementById('admin-fee-row').style.display = 'flex';
                 document.getElementById('processing-fee-row').style.display = 'flex';
+                document.getElementById('biaya_pemrosesan').value = '1250';
                 
                 document.querySelectorAll('.produk-select').forEach(select => {
                     const selectedOption = select.options[select.selectedIndex];

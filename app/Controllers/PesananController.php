@@ -136,7 +136,7 @@ class PesananController extends BaseController
                 ];
             }
             
-            $promoXtraAmount = $promoXtra ? ($subtotal * 2) / 100 : 0;
+            $promoXtraAmount = $promoXtra ? ($subtotal * 4.5) / 100 : 0;
             
             $totalHarga = $subtotal - $totalBiayaAdmin - ($biayaPemrosesan ?? 0) - $promoXtraAmount;
             $totalHarga = max(0, $totalHarga);
