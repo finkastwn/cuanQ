@@ -200,7 +200,11 @@
                                 </td>
                             </tr>
                         <?php else: ?>
-                                <?php $no = 1; ?>
+                                <?php 
+                                    $currentPage = isset($pager) ? ($pager->getCurrentPage('pesanan') ?? 1) : 1;
+                                    $perPage = isset($perPage) ? (int)$perPage : 10;
+                                    $no = (($currentPage - 1) * $perPage) + 1;
+                                ?>
                                 <?php foreach ($pesanan as $item): ?>
                                     <tr>
                                         <td onclick="event.stopPropagation();">
@@ -254,6 +258,34 @@
                         <?php endif; ?>
                     </tbody>
                 </table>
+                <?php if (isset($pager)): ?>
+                <div style="display:flex; justify-content: space-between; align-items:center; padding: 12px 0;">
+                    <div>
+                        <form method="get" action="<?= base_url('pesanan') ?>" style="display:inline-flex; gap:8px; align-items: baseline;">
+                            <?php if (!empty($search)): ?><input type="hidden" name="search" value="<?= esc($search) ?>"><?php endif; ?>
+                            <?php if (!empty($statusFilter)): ?><input type="hidden" name="status" value="<?= esc($statusFilter) ?>"><?php endif; ?>
+                            <label style="margin:0; font-weight:600; color: <?= MAIN_DARK_COLOR; ?>; display:inline-block;">Per halaman</label>
+                            <select name="per_page" onchange="this.form.submit()" class="form-input" style="width:auto; padding:6px 10px;">
+                                <?php foreach ([10,20,50,100] as $size): ?>
+                                    <option value="<?= $size ?>" <?= ($perPage == $size ? 'selected' : '') ?>><?= $size ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </form>
+                    </div>
+                    <div>
+                        <style>
+                            .pager-wrap { display:flex; justify-content:flex-end; }
+                            .pager-list { list-style:none; display:flex; gap:6px; margin:0; padding:0; }
+                            .pager-item { }
+                            .pager-item.disabled .pager-link { opacity:.4; pointer-events:none; }
+                            .pager-item.active .pager-link { background: <?= MAIN_COLOR; ?>; color:#fff; border-color: <?= MAIN_COLOR; ?>; }
+                            .pager-link { display:inline-block; min-width:36px; text-align:center; padding:8px 12px; border:1px solid #e0e0e0; border-radius:8px; text-decoration:none; color: <?= MAIN_DARK_COLOR; ?>; font-weight:600; background:#fff; transition:.2s; }
+                            .pager-link:hover { border-color: <?= MAIN_COLOR; ?>; box-shadow: 0 2px 8px rgba(0,0,0,.06); transform: translateY(-1px); }
+                        </style>
+                        <?= $pager->links('pesanan', 'nice_full') ?>
+                    </div>
+                </div>
+                <?php endif; ?>
         </div>
     </div>
     <?php include(APPPATH . 'Views/partials/snackbar.php'); ?>

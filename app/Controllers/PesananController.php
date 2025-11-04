@@ -45,9 +45,14 @@ class PesananController extends BaseController
             $builder->where('pesanan.status', $statusFilter);
         }
         
-        $pesananList = $builder->orderBy('pesanan.tanggal_pesanan DESC, pesanan.created_at DESC')->findAll();;
-        
+        $perPage = (int) ($this->request->getGet('per_page') ?? 10);
+        if ($perPage <= 0) { $perPage = 10; }
+
+        $pesananList = $builder->orderBy('pesanan.tanggal_pesanan DESC, pesanan.created_at DESC')->paginate($perPage, 'pesanan');
+
         $data['pesanan'] = $pesananList;
+        $data['pager'] = $this->pesananModel->pager;
+        $data['perPage'] = $perPage;
         $data['produk'] = $this->produkModel->findAll();
         $data['search'] = $search;
         $data['statusFilter'] = $statusFilter;
