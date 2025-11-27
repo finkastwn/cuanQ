@@ -445,10 +445,29 @@
                                 <option value="">Pilih Produk</option>
                                 <?php if (isset($produk) && !empty($produk)): ?>
                                     <?php foreach ($produk as $p): ?>
+                                        <?php 
+                                        $hasPromo = !empty($p['promo_type']) && $p['promo_active'] == 1;
+                                        $displayPrice = $hasPromo ? $p['harga_final'] : $p['harga_produk'];
+                                        $originalPrice = $p['harga_produk'];
+                                        ?>
                                         <option value="<?= $p['id'] ?>" 
-                                                data-harga="<?= $p['harga_final'] ?? $p['harga_produk'] ?>"
+                                                data-harga="<?= $displayPrice ?>"
+                                                data-original-harga="<?= $originalPrice ?>"
+                                                data-has-promo="<?= $hasPromo ? 'true' : 'false' ?>"
+                                                data-promo-type="<?= $hasPromo ? $p['promo_type'] : '' ?>"
+                                                data-promo-value="<?= $hasPromo ? $p['promo_value'] : '' ?>"
+                                                data-biaya-pajak="<?= $p['biaya_pajak_persen'] ?? 0 ?>"
+                                                data-komisi-affiliate="<?= $p['komisi_affiliate_persen'] ?? 0 ?>"
                                                 data-nama="<?= esc($p['nama_produk']) ?>">
-                                            <?= esc($p['nama_produk']) ?> - Rp <?= number_format($p['harga_final'] ?? $p['harga_produk'], 0, ',', '.') ?>
+                                            <?= esc($p['nama_produk']) ?> - 
+                                            <?php if ($hasPromo): ?>
+                                                🏷️ Rp <?= number_format($displayPrice, 0, ',', '.') ?>
+                                                <span style="text-decoration: line-through; color: #999; font-size: 0.9em;">
+                                                    Rp <?= number_format($originalPrice, 0, ',', '.') ?>
+                                                </span>
+                                            <?php else: ?>
+                                                Rp <?= number_format($displayPrice, 0, ',', '.') ?>
+                                            <?php endif; ?>
                                         </option>
                                     <?php endforeach; ?>
                                 <?php endif; ?>
@@ -482,6 +501,14 @@
             `;
             
             produkList.appendChild(newProdukCard);
+            
+            if (biayaPotonganCheckbox.checked) {
+                const biayaAdminGroup = newProdukCard.querySelector('.biaya-admin-group');
+                if (biayaAdminGroup) {
+                    biayaAdminGroup.style.display = 'block';
+                }
+            }
+            
             attachProdukListeners(newProdukCard);
         }
 
