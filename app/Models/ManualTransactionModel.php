@@ -17,6 +17,7 @@ class ManualTransactionModel extends Model
         'jumlah',
         'kategori',
         'reference_id',
+        'budget_source',
     ];
 
     protected $useTimestamps = true;

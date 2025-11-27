@@ -8,6 +8,7 @@ use App\Models\ManualTransactionModel;
 use App\Models\FinancialSummaryModel;
 use App\Models\PesananModel;
 use App\Models\PembelianBahanModel;
+use App\Models\PesananBahanUsageModel;
 
 class KeuanganController extends BaseController
 {
@@ -15,6 +16,7 @@ class KeuanganController extends BaseController
     protected $financialSummaryModel;
     protected $pesananModel;
     protected $pembelianBahanModel;
+    protected $pesananBahanUsageModel;
 
     public function __construct()
     {
@@ -22,11 +24,13 @@ class KeuanganController extends BaseController
         $this->financialSummaryModel = new FinancialSummaryModel();
         $this->pesananModel = new PesananModel();
         $this->pembelianBahanModel = new PembelianBahanModel();
+        $this->pesananBahanUsageModel = new PesananBahanUsageModel();
     }
 
     public function index()
     {
         $data['financial_summary'] = $this->calculateFinancialSummary();
+        $data['budget_info'] = $this->calculateBudgetInfo();
         $data['transactions'] = $this->getAllTransactions();
         $data['pesanan_selesai'] = $this->pesananModel->where('status', 'selesai')->findAll();
         $data['pesanan_dicairkan'] = $this->pesananModel->where('status', 'dicairkan')->findAll();
@@ -74,7 +78,17 @@ class KeuanganController extends BaseController
                                            ->selectSum('jumlah', 'total')
                                            ->first()['total'] ?? 0;
 
-        $utangTotal += $manualPengeluaranDuitPribadi;
+        $manualUtang = $this->manualTransactionModel
+                            ->where('kategori', 'manual_utang')
+                            ->selectSum('jumlah', 'total')
+                            ->first()['total'] ?? 0;
+
+        $pembayaranUtang = $this->manualTransactionModel
+                               ->where('kategori', 'pembayaran_utang')
+                               ->selectSum('jumlah', 'total')
+                               ->first()['total'] ?? 0;
+
+        $utangTotal += $manualPengeluaranDuitPribadi + $manualUtang - $pembayaranUtang;
 
         $manualPemasukanShopee = $this->manualTransactionModel
                                     ->where('type', 'pemasukan')
@@ -95,7 +109,13 @@ class KeuanganController extends BaseController
                                   ->selectSum('harga_total', 'total')
                                   ->first()['total'] ?? 0;
 
-        $bankBalance = $dicairkanTotal + $manualPemasukanBank - $pembelianFromBank - $manualPengeluaranBank;
+        $pembayaranUtangFromBank = $this->manualTransactionModel
+                                      ->where('kategori', 'pembayaran_utang')
+                                      ->where('source_money', 'bank_account')
+                                      ->selectSum('jumlah', 'total')
+                                      ->first()['total'] ?? 0;
+
+        $bankBalance = $dicairkanTotal + $manualPemasukanBank - $pembelianFromBank - $manualPengeluaranBank - $pembayaranUtangFromBank;
 
         $shopeePocketFromPesanan = $this->manualTransactionModel
                                       ->where('kategori', 'pesanan')
@@ -120,6 +140,70 @@ class KeuanganController extends BaseController
         ];
     }
 
+    private function calculateBudgetInfo()
+    {
+        $hppBahanBudget = $this->pesananBahanUsageModel
+            ->selectSum('total_hpp', 'total')
+            ->first()['total'] ?? 0;
+
+        $hppJasaBudget = $this->pesananModel
+            ->selectSum('print_cost', 'total')
+            ->first()['total'] ?? 0;
+
+        $db = \Config\Database::connect();
+        $query = $db->query("
+            SELECT 
+                SUM(p.total_harga) as total_harga,
+                SUM(COALESCE(p.print_cost, 0)) as total_print_cost,
+                SUM(COALESCE(h.total_hpp, 0)) as total_hpp
+            FROM pesanan p
+            LEFT JOIN (
+                SELECT pesanan_id, SUM(total_hpp) as total_hpp
+                FROM pesanan_bahan_usage
+                GROUP BY pesanan_id
+            ) h ON h.pesanan_id = p.id
+        ");
+        $result = $query->getRowArray();
+        $totalHarga = (int)($result['total_harga'] ?? 0);
+        $totalHpp = (int)($result['total_hpp'] ?? 0);
+        $totalPrintCost = (int)($result['total_print_cost'] ?? 0);
+        $keuntunganBudget = $totalHarga - $totalHpp - $totalPrintCost;
+
+        $hppBahanUsage = $this->pembelianBahanModel
+            ->selectSum('harga_total', 'total')
+            ->first()['total'] ?? 0;
+
+        $hppJasaUsage = $this->manualTransactionModel
+            ->where('type', 'pengeluaran')
+            ->where('budget_source', 'hpp_jasa')
+            ->selectSum('jumlah', 'total')
+            ->first()['total'] ?? 0;
+
+        $keuntunganUsage = $this->manualTransactionModel
+            ->where('type', 'pengeluaran')
+            ->where('budget_source', 'keuntungan')
+            ->selectSum('jumlah', 'total')
+            ->first()['total'] ?? 0;
+
+        return [
+            'hpp_bahan' => [
+                'budget' => (int)$hppBahanBudget,
+                'usage' => (int)$hppBahanUsage,
+                'remaining' => max(0, (int)$hppBahanBudget - (int)$hppBahanUsage),
+            ],
+            'hpp_jasa' => [
+                'budget' => (int)$hppJasaBudget,
+                'usage' => (int)$hppJasaUsage,
+                'remaining' => max(0, (int)$hppJasaBudget - (int)$hppJasaUsage),
+            ],
+            'keuntungan' => [
+                'budget' => max(0, (int)$keuntunganBudget),
+                'usage' => (int)$keuntunganUsage,
+                'remaining' => max(0, (int)$keuntunganBudget - (int)$keuntunganUsage),
+            ],
+        ];
+    }
+
     private function getAllTransactions()
     {
         $transactions = [];
@@ -132,6 +216,8 @@ class KeuanganController extends BaseController
         foreach ($manualTransactions as $transaction) {
             $sourceText = 'Manual Entry';
             $sourceMoney = $transaction['source_money'] ?? 'bank_account';
+            $kategori = $transaction['kategori'] ?? 'manual';
+            
             switch ($sourceMoney) {
                 case 'duit_pribadi':
                     $sourceText = 'Manual Entry (Duit Pribadi)';
@@ -143,6 +229,12 @@ class KeuanganController extends BaseController
                     $sourceText = 'Manual Entry (Shopee Pocket)';
                     break;
             }
+            
+            if ($kategori === 'manual_utang') {
+                $sourceText = 'Tambah Utang Manual';
+            } elseif ($kategori === 'pembayaran_utang') {
+                $sourceText = 'Pembayaran Utang';
+            }
 
             $transactions[] = [
                 'id' => $transaction['id'],
@@ -151,8 +243,9 @@ class KeuanganController extends BaseController
                 'type' => $transaction['type'],
                 'source_money' => $sourceMoney,
                 'jumlah' => $transaction['jumlah'],
-                'kategori' => 'manual',
+                'kategori' => $kategori,
                 'source' => $sourceText,
+                'budget_source' => $transaction['budget_source'] ?? '',
                 'editable' => true,
             ];
         }
@@ -201,6 +294,9 @@ class KeuanganController extends BaseController
         $type = $this->request->getPost('type');
         $sourceMoney = $this->request->getPost('source_money');
         $jumlah = $this->request->getPost('jumlah');
+        $budgetSource = $this->request->getPost('budget_source') ?? '';
+        $utangCategory = $this->request->getPost('utang_category') ?? '';
+        $kategori = $this->request->getPost('kategori') ?? 'manual';
 
         if (empty($tanggal) || empty($keterangan) || empty($type) || empty($sourceMoney) || empty($jumlah)) {
             return $this->response->setJSON(['status' => 'error', 'message' => 'Semua field wajib diisi']);
@@ -212,13 +308,30 @@ class KeuanganController extends BaseController
             return $this->response->setJSON(['status' => 'error', 'message' => 'Jumlah harus lebih dari 0']);
         }
 
+        if (!empty($utangCategory)) {
+            $kategori = $utangCategory;
+        }
+
+        $validKategori = ['manual', 'pesanan', 'pembelian_bahan', 'manual_utang', 'pembayaran_utang'];
+        if (!in_array($kategori, $validKategori)) {
+            $kategori = 'manual';
+        }
+
+        if ($type === 'pengeluaran' && !empty($budgetSource) && !in_array($kategori, ['manual_utang', 'pembayaran_utang'])) {
+            $validBudgetSources = ['hpp_bahan', 'hpp_jasa', 'keuntungan'];
+            if (!in_array($budgetSource, $validBudgetSources)) {
+                return $this->response->setJSON(['status' => 'error', 'message' => 'Budget source tidak valid']);
+            }
+        }
+
         $data = [
             'tanggal' => $tanggal,
             'keterangan' => $keterangan,
             'type' => $type,
             'source_money' => $sourceMoney,
             'jumlah' => $jumlah,
-            'kategori' => 'manual',
+            'kategori' => $kategori,
+            'budget_source' => ($type === 'pengeluaran' && !empty($budgetSource) && !in_array($kategori, ['manual_utang', 'pembayaran_utang'])) ? $budgetSource : '',
         ];
 
         try {
@@ -245,6 +358,9 @@ class KeuanganController extends BaseController
         $type = $this->request->getPost('type');
         $sourceMoney = $this->request->getPost('source_money');
         $jumlah = $this->request->getPost('jumlah');
+        $budgetSource = $this->request->getPost('budget_source') ?? '';
+        $utangCategory = $this->request->getPost('utang_category') ?? '';
+        $kategori = $this->request->getPost('kategori') ?? $existing['kategori'] ?? 'manual';
 
         if (empty($id) || empty($tanggal) || empty($keterangan) || empty($type) || empty($sourceMoney) || empty($jumlah)) {
             return $this->response->setJSON(['status' => 'error', 'message' => 'Semua field wajib diisi']);
@@ -261,12 +377,32 @@ class KeuanganController extends BaseController
             return $this->response->setJSON(['status' => 'error', 'message' => 'Jumlah harus lebih dari 0']);
         }
 
+        if (!empty($utangCategory)) {
+            $kategori = $utangCategory;
+        }
+
+        // Validate kategori
+        $validKategori = ['manual', 'pesanan', 'pembelian_bahan', 'manual_utang', 'pembayaran_utang'];
+        if (!in_array($kategori, $validKategori)) {
+            $kategori = $existing['kategori'] ?? 'manual';
+        }
+
+        // Validate budget_source if it's a pengeluaran and not an utang transaction
+        if ($type === 'pengeluaran' && !empty($budgetSource) && !in_array($kategori, ['manual_utang', 'pembayaran_utang'])) {
+            $validBudgetSources = ['hpp_bahan', 'hpp_jasa', 'keuntungan'];
+            if (!in_array($budgetSource, $validBudgetSources)) {
+                return $this->response->setJSON(['status' => 'error', 'message' => 'Budget source tidak valid']);
+            }
+        }
+
         $data = [
             'tanggal' => $tanggal,
             'keterangan' => $keterangan,
             'type' => $type,
             'source_money' => $sourceMoney,
             'jumlah' => $jumlah,
+            'kategori' => $kategori,
+            'budget_source' => ($type === 'pengeluaran' && !empty($budgetSource) && !in_array($kategori, ['manual_utang', 'pembayaran_utang'])) ? $budgetSource : '',
         ];
 
         try {

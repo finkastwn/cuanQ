@@ -77,11 +77,12 @@
                 <div style="overflow:auto;">
                     <table class="nice-table">
                         <colgroup>
-                            <col style="width:28%">
                             <col style="width:18%">
-                            <col style="width:18%">
-                            <col style="width:18%">
-                            <col style="width:18%">
+                            <col style="width:16%">
+                            <col style="width:16%">
+                            <col style="width:16%">
+                            <col style="width:17%">
+                            <col style="width:17%">
                         </colgroup>
                         <thead>
                             <tr>
@@ -89,7 +90,8 @@
                                 <th class="amount">Total Penjualan</th>
                                 <th class="amount">Total HPP Bahan</th>
                                 <th class="amount">Total HPP Jasa (Print)</th>
-                                <th class="amount">Keuntungan Bersih</th>
+                                <th class="amount">Keuntungan</th>
+                                <th class="amount">Pengeluaran</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -97,9 +99,16 @@
                                 <tr>
                                     <td><?= esc($row['ym']) ?></td>
                                     <td class="amount">Rp <?= number_format($row['total_harga'], 0, ',', '.') ?></td>
-                                    <td class="amount deduction">Rp <?= number_format($row['total_hpp'], 0, ',', '.') ?></td>
-                                    <td class="amount deduction">Rp <?= number_format($row['total_print_cost'], 0, ',', '.') ?></td>
+                                    <td class="amount deduction">
+                                        Rp <?= number_format($row['hpp_bahan_usage'], 0, ',', '.') ?> / 
+                                        Rp <?= number_format($row['hpp_bahan_budget'], 0, ',', '.') ?>
+                                    </td>
+                                    <td class="amount deduction">
+                                        Rp <?= number_format($row['hpp_jasa_usage'], 0, ',', '.') ?> / 
+                                        Rp <?= number_format($row['hpp_jasa_budget'], 0, ',', '.') ?>
+                                    </td>
                                     <td class="amount <?= ($row['net_profit'] >= 0 ? 'positive' : 'negative') ?>">Rp <?= number_format($row['net_profit'], 0, ',', '.') ?></td>
+                                    <td class="amount deduction">Rp <?= number_format($row['expenses'], 0, ',', '.') ?></td>
                                 </tr>
                             <?php endforeach; ?>
                         </tbody>

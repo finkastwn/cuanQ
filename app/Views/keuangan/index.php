@@ -282,10 +282,10 @@
                         </div>
                         <div class="transaction-actions">
                             <?php if ($transaction['editable']): ?>
-                                <button class="btn-edit-transaction" onclick="editTransaction(<?= $transaction['id'] ?>, '<?= $transaction['tanggal'] ?>', '<?= esc($transaction['keterangan']) ?>', '<?= $transaction['type'] ?>', '<?= $transaction['source_money'] ?? 'bank_account' ?>', <?= $transaction['jumlah'] ?>)">
+                                <button class="btn-edit-transaction" onclick="editTransaction(<?= $transaction['id'] ?>, '<?= $transaction['tanggal'] ?>', '<?= esc($transaction['keterangan'], 'js') ?>', '<?= $transaction['type'] ?>', '<?= $transaction['source_money'] ?? 'bank_account' ?>', <?= $transaction['jumlah'] ?>, '<?= esc($transaction['budget_source'] ?? '', 'js') ?>', '<?= esc($transaction['kategori'] ?? 'manual', 'js') ?>')">
                                     ✏️
                                 </button>
-                                <button class="btn-delete-transaction" onclick="deleteTransaction(<?= $transaction['id'] ?>, '<?= esc($transaction['keterangan']) ?>')">
+                                <button class="btn-delete-transaction" onclick="deleteTransaction(<?= $transaction['id'] ?>, '<?= esc($transaction['keterangan'], 'js') ?>')">
                                     🗑️
                                 </button>
                             <?php else: ?>

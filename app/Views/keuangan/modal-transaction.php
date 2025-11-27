@@ -48,6 +48,25 @@
                 </select>
             </div>
             
+            <div class="form-group" id="utang_category_group" style="display: none;">
+                <label for="utang_category" class="form-label">Kategori Utang</label>
+                <select id="utang_category" name="utang_category" class="form-input">
+                    <option value="">Pilih Kategori</option>
+                    <option value="manual_utang">➕ Tambah Utang Manual</option>
+                    <option value="pembayaran_utang">➖ Pembayaran Utang</option>
+                </select>
+            </div>
+            
+            <div class="form-group" id="budget_source_group" style="display: none;">
+                <label for="budget_source" class="form-label">Kurangi dari Budget</label>
+                <select id="budget_source" name="budget_source" class="form-input">
+                    <option value="">Tidak mengurangi budget</option>
+                    <option value="hpp_bahan">📦 HPP Bahan</option>
+                    <option value="hpp_jasa">🖨️ HPP Jasa</option>
+                    <option value="keuntungan">💰 Keuntungan</option>
+                </select>
+            </div>
+            
             <div class="form-group">
                 <label for="jumlah" class="form-label">Jumlah</label>
                 <div class="currency-input-wrapper">
@@ -125,12 +144,14 @@
         document.getElementById('submit-btn').textContent = 'Tambah Transaksi';
         document.getElementById('transactionForm').reset();
         document.getElementById('transaction_id').value = '';
+        document.getElementById('budget_source_group').style.display = 'none';
+        document.getElementById('utang_category_group').style.display = 'none';
         
         const today = new Date().toISOString().split('T')[0];
         document.getElementById('tanggal').value = today;
     }
 
-    function editTransaction(id, tanggal, keterangan, type, jumlah) {
+    function editTransaction(id, tanggal, keterangan, type, sourceMoney, jumlah, budgetSource, kategori) {
         isEditMode = true;
         document.getElementById('transactionModal').style.display = 'block';
         document.getElementById('modal-title').textContent = 'Edit Transaksi Manual';
@@ -140,7 +161,18 @@
         document.getElementById('tanggal').value = tanggal;
         document.getElementById('keterangan').value = keterangan;
         document.getElementById('type').value = type;
+        document.getElementById('source_money').value = sourceMoney || 'bank_account';
         document.getElementById('jumlah').value = jumlah.toLocaleString('id-ID');
+        document.getElementById('budget_source').value = budgetSource || '';
+        
+        const utangCategorySelect = document.getElementById('utang_category');
+        if (kategori === 'manual_utang' || kategori === 'pembayaran_utang') {
+            utangCategorySelect.value = kategori;
+        } else {
+            utangCategorySelect.value = '';
+        }
+        
+        updateUtangAndBudgetFields();
     }
 
     function closeTransactionModal() {
@@ -177,12 +209,52 @@
     document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('jumlah').addEventListener('input', formatCurrency);
         
+        document.getElementById('source_money').addEventListener('change', function() {
+            updateUtangAndBudgetFields();
+        });
+        
+        document.getElementById('type').addEventListener('change', function() {
+            updateUtangAndBudgetFields();
+        });
+        
+        function updateUtangAndBudgetFields() {
+            const typeSelect = document.getElementById('type');
+            const sourceMoneySelect = document.getElementById('source_money');
+            const budgetSourceGroup = document.getElementById('budget_source_group');
+            const utangCategoryGroup = document.getElementById('utang_category_group');
+            
+            if (typeSelect.value === 'pengeluaran') {
+                if (sourceMoneySelect.value === 'duit_pribadi') {
+                    utangCategoryGroup.style.display = 'block';
+                    budgetSourceGroup.style.display = 'none';
+                    document.getElementById('budget_source').value = '';
+                } else if (sourceMoneySelect.value === 'bank_account') {
+                    utangCategoryGroup.style.display = 'block';
+                    budgetSourceGroup.style.display = 'block';
+                } else {
+                    budgetSourceGroup.style.display = 'block';
+                    utangCategoryGroup.style.display = 'none';
+                    document.getElementById('utang_category').value = '';
+                }
+            } else {
+                budgetSourceGroup.style.display = 'none';
+                utangCategoryGroup.style.display = 'none';
+                document.getElementById('budget_source').value = '';
+                document.getElementById('utang_category').value = '';
+            }
+        }
+        
         document.getElementById('transactionForm').addEventListener('submit', function(e) {
             e.preventDefault();
             
             const formData = new FormData(this);
             const jumlahRaw = document.getElementById('jumlah').value.replace(/\D/g, '');
             formData.set('jumlah', jumlahRaw);
+            
+            const utangCategory = document.getElementById('utang_category').value;
+            if (utangCategory) {
+                formData.set('kategori', utangCategory);
+            }
             
             if (isEditMode) {
                 formData.append('id', document.getElementById('transaction_id').value);

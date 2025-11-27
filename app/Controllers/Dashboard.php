@@ -4,9 +4,20 @@ namespace App\Controllers;
 
 use App\Controllers\BaseController;
 use CodeIgniter\HTTP\ResponseInterface;
+use App\Models\PembelianBahanModel;
+use App\Models\ManualTransactionModel;
 
 class Dashboard extends BaseController
 {
+    protected $pembelianBahanModel;
+    protected $manualTransactionModel;
+
+    public function __construct()
+    {
+        $this->pembelianBahanModel = new PembelianBahanModel();
+        $this->manualTransactionModel = new ManualTransactionModel();
+    }
+
     public function index()
     {
         $session = session();
@@ -50,6 +61,67 @@ class Dashboard extends BaseController
             ];
         }
 
-        return view('dashboard', ['monthly_profit' => $monthly]);
+
+        $pembelianBahanMonthly = $db->query("
+            SELECT 
+                DATE_FORMAT(tanggal_pembelian, '%Y-%m') as ym,
+                SUM(harga_total) as total
+            FROM pembelian_bahan
+            WHERE tanggal_pembelian >= ?
+            GROUP BY ym
+        ", [$startDate])->getResultArray();
+
+        $allPengeluaranMonthly = $db->query("
+            SELECT 
+                DATE_FORMAT(tanggal, '%Y-%m') as ym,
+                SUM(jumlah) as total
+            FROM manual_transactions
+            WHERE type = 'pengeluaran' 
+                AND tanggal >= ?
+            GROUP BY ym
+        ", [$startDate])->getResultArray();
+
+        $pembelianBahanByMonth = [];
+        foreach ($pembelianBahanMonthly as $pb) {
+            $pembelianBahanByMonth[$pb['ym']] = (int)$pb['total'];
+        }
+
+        $allPengeluaranByMonth = [];
+        foreach ($allPengeluaranMonthly as $ap) {
+            $allPengeluaranByMonth[$ap['ym']] = (int)$ap['total'];
+        }
+
+        $hppJasaUsageMonthly = $db->query("
+            SELECT 
+                DATE_FORMAT(tanggal, '%Y-%m') as ym,
+                SUM(jumlah) as total
+            FROM manual_transactions
+            WHERE type = 'pengeluaran' 
+                AND budget_source = 'hpp_jasa'
+                AND tanggal >= ?
+            GROUP BY ym
+        ", [$startDate])->getResultArray();
+
+        $hppJasaUsageByMonth = [];
+        foreach ($hppJasaUsageMonthly as $hj) {
+            $hppJasaUsageByMonth[$hj['ym']] = (int)$hj['total'];
+        }
+
+        foreach ($monthly as &$month) {
+            $monthExpenses = ($pembelianBahanByMonth[$month['ym']] ?? 0) + ($allPengeluaranByMonth[$month['ym']] ?? 0);
+            $month['expenses'] = $monthExpenses;
+            $month['net_after_expenses'] = $month['net_profit'] - $monthExpenses;
+            
+            $month['hpp_bahan_budget'] = $month['total_hpp'];
+            $month['hpp_bahan_usage'] = $pembelianBahanByMonth[$month['ym']] ?? 0;
+            
+            $month['hpp_jasa_budget'] = $month['total_print_cost'];
+            $month['hpp_jasa_usage'] = $hppJasaUsageByMonth[$month['ym']] ?? 0;
+        }
+        unset($month);
+
+        return view('dashboard', [
+            'monthly_profit' => $monthly,
+        ]);
     }
 }
