@@ -17,7 +17,9 @@ class ProdukModel extends Model
         'promo_value',
         'promo_active',
         'promo_start',
-        'promo_end'
+        'promo_end',
+        'biaya_pajak_persen',
+        'komisi_affiliate_persen',
     ];
 
     protected $useTimestamps = true;

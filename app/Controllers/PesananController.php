@@ -150,9 +150,12 @@ class PesananController extends BaseController
             foreach ($produkIds as $key => $produkId) {
                 $produk = $this->produkModel->find($produkId);
                 if (!$produk) continue;
-                
+
                 $jumlah = $jumlahProduk[$key];
-                $hargaProduk = $produk['harga_final'] ?? $produk['harga_produk'];
+                $hasPromoAktif = !empty($produk['promo_type']) && ((int) ($produk['promo_active'] ?? 0) === 1);
+                $hargaProduk = $hasPromoAktif
+                    ? ($produk['harga_final'] ?? $produk['harga_produk'])
+                    : $produk['harga_produk'];
                 $subtotalItem = $jumlah * $hargaProduk;
                 
                 $biayaAdminNominal = 0;
@@ -175,20 +178,38 @@ class PesananController extends BaseController
                 ];
             }
             
-            if ($adaBiayaPotongan) {
-                $sumTambahan = 0;
-                if (is_array($biayaTambahanNominal)) {
-                    foreach ($biayaTambahanNominal as $val) {
-                        $sumTambahan += intval($val);
+            $cleanBiayaTambahan = [];
+            if (is_array($biayaTambahanNominal)) {
+                foreach ($biayaTambahanNominal as $val) {
+                    $clean = (int) preg_replace('/\D/', '', strval($val));
+                    if ($clean > 0) {
+                        $cleanBiayaTambahan[] = $clean;
                     }
                 }
-                $biayaPemrosesan = 1250 + $sumTambahan;
             }
+
+            $biayaPemrosesan = (int) preg_replace('/\D/', '', strval($biayaPemrosesan ?? 0));
 
             $promoXtraAmount = $promoXtra ? ($subtotal * 4.5) / 100 : 0;
             
-            $totalHarga = $subtotal - $totalBiayaAdmin - ($biayaPemrosesan ?? 0) - $promoXtraAmount;
-            $totalHarga = max(0, $totalHarga);
+            $totalBiayaAdmin = round($totalBiayaAdmin);
+            $promoXtraAmount = round($promoXtraAmount);
+            $biayaPemrosesan = round($biayaPemrosesan);
+
+            $totalHarga = $subtotal - $totalBiayaAdmin - $biayaPemrosesan - $promoXtraAmount;
+            $totalHarga = max(0, (int) round($totalHarga));
+
+            log_message('debug', 'Pesanan store calc', [
+                'subtotal' => $subtotal,
+                'total_biaya_admin' => $totalBiayaAdmin,
+                'biaya_pemrosesan' => $biayaPemrosesan,
+                'promo_xtra_amount' => $promoXtraAmount,
+                'total_harga' => $totalHarga,
+                'ada_biaya_potongan' => $adaBiayaPotongan,
+                'promo_xtra' => $promoXtra,
+                'clean_biaya_tambahan' => $cleanBiayaTambahan,
+                'raw_biaya_tambahan_nominal' => $biayaTambahanNominal,
+            ]);
             
             $dataPesanan = [
                 'nama_pembeli' => $namaPembeli,
