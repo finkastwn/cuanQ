@@ -45,7 +45,7 @@ class Dashboard extends BaseController
             ) h ON h.pesanan_id = p.id
             WHERE p.tanggal_pesanan >= ?
             GROUP BY ym
-            ORDER BY ym ASC
+            ORDER BY ym DESC
         ", [$startDate]);
 
         $rows = $query->getResultArray();
