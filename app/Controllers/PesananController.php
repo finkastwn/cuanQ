@@ -190,7 +190,7 @@ class PesananController extends BaseController
 
             $biayaPemrosesan = (int) preg_replace('/\D/', '', strval($biayaPemrosesan ?? 0));
 
-            $promoXtraAmount = $promoXtra ? ($subtotal * 4.5) / 100 : 0;
+            $promoXtraAmount = $promoXtra ? ($subtotal * 8.5) / 100 : 0;
             
             $totalBiayaAdmin = round($totalBiayaAdmin);
             $promoXtraAmount = round($promoXtraAmount);

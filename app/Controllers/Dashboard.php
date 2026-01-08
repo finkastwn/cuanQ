@@ -77,7 +77,15 @@ class Dashboard extends BaseController
                 SUM(jumlah) as total
             FROM manual_transactions
             WHERE type = 'pengeluaran' 
+                AND (kategori IS NULL OR kategori != 'penyesuaian_saldo')
                 AND tanggal >= ?
+            GROUP BY ym
+        ", [$startDate])->getResultArray();
+
+        $pesananCountMonthly = $db->query("
+            SELECT DATE_FORMAT(tanggal_pesanan, '%Y-%m') as ym, COUNT(*) as jumlah
+            FROM pesanan
+            WHERE tanggal_pesanan >= ?
             GROUP BY ym
         ", [$startDate])->getResultArray();
 
@@ -89,6 +97,11 @@ class Dashboard extends BaseController
         $allPengeluaranByMonth = [];
         foreach ($allPengeluaranMonthly as $ap) {
             $allPengeluaranByMonth[$ap['ym']] = (int)$ap['total'];
+        }
+
+        $pesananCountByMonth = [];
+        foreach ($pesananCountMonthly as $pc) {
+            $pesananCountByMonth[$pc['ym']] = (int)$pc['jumlah'];
         }
 
         $hppJasaUsageMonthly = $db->query("
@@ -117,6 +130,8 @@ class Dashboard extends BaseController
             
             $month['hpp_jasa_budget'] = $month['total_print_cost'];
             $month['hpp_jasa_usage'] = $hppJasaUsageByMonth[$month['ym']] ?? 0;
+
+            $month['pesanan_count'] = $pesananCountByMonth[$month['ym']] ?? 0;
         }
         unset($month);
 

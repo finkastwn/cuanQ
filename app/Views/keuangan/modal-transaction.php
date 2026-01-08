@@ -28,6 +28,14 @@
                        placeholder="Masukkan keterangan transaksi"
                        required>
             </div>
+
+            <div class="form-group">
+                <label for="kategori_manual" class="form-label">Kategori</label>
+                <select id="kategori_manual" name="kategori" class="form-input">
+                    <option value="manual">Umum / Manual</option>
+                    <option value="penyesuaian_saldo">Penyesuaian Saldo</option>
+                </select>
+            </div>
             
             <div class="form-group">
                 <label for="type" class="form-label">Tipe Transaksi</label>
@@ -146,6 +154,7 @@
         document.getElementById('transaction_id').value = '';
         document.getElementById('budget_source_group').style.display = 'none';
         document.getElementById('utang_category_group').style.display = 'none';
+            document.getElementById('kategori_manual').value = 'manual';
         
         const today = new Date().toISOString().split('T')[0];
         document.getElementById('tanggal').value = today;
@@ -166,10 +175,13 @@
         document.getElementById('budget_source').value = budgetSource || '';
         
         const utangCategorySelect = document.getElementById('utang_category');
+        const kategoriManualSelect = document.getElementById('kategori_manual');
         if (kategori === 'manual_utang' || kategori === 'pembayaran_utang') {
             utangCategorySelect.value = kategori;
+            kategoriManualSelect.value = 'manual';
         } else {
             utangCategorySelect.value = '';
+            kategoriManualSelect.value = kategori || 'manual';
         }
         
         updateUtangAndBudgetFields();
@@ -222,6 +234,7 @@
             const sourceMoneySelect = document.getElementById('source_money');
             const budgetSourceGroup = document.getElementById('budget_source_group');
             const utangCategoryGroup = document.getElementById('utang_category_group');
+            const kategoriManualSelect = document.getElementById('kategori_manual');
             
             if (typeSelect.value === 'pengeluaran') {
                 if (sourceMoneySelect.value === 'duit_pribadi') {
@@ -242,6 +255,14 @@
                 document.getElementById('budget_source').value = '';
                 document.getElementById('utang_category').value = '';
             }
+
+            // Jika kategori penyesuaian_saldo dipilih, jangan pakai budget/utang
+            if (kategoriManualSelect.value === 'penyesuaian_saldo') {
+                budgetSourceGroup.style.display = 'none';
+                utangCategoryGroup.style.display = 'none';
+                document.getElementById('budget_source').value = '';
+                document.getElementById('utang_category').value = '';
+            }
         }
         
         document.getElementById('transactionForm').addEventListener('submit', function(e) {
@@ -254,6 +275,8 @@
             const utangCategory = document.getElementById('utang_category').value;
             if (utangCategory) {
                 formData.set('kategori', utangCategory);
+            } else {
+                formData.set('kategori', document.getElementById('kategori_manual').value || 'manual');
             }
             
             if (isEditMode) {

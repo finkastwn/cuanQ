@@ -77,27 +77,29 @@
                 <div style="overflow:auto;">
                     <table class="nice-table">
                         <colgroup>
-                            <col style="width:18%">
-                            <col style="width:16%">
-                            <col style="width:16%">
-                            <col style="width:16%">
-                            <col style="width:17%">
-                            <col style="width:17%">
+                            <col style="width:14%">
+                            <col style="width:14%">
+                            <col style="width:14%">
+                            <col style="width:14%">
+                            <col style="width:14%">
+                            <col style="width:15%">
                         </colgroup>
                         <thead>
                             <tr>
                                 <th>Bulan</th>
+                                <th class="amount">Jumlah Pesanan</th>
                                 <th class="amount">Total Penjualan</th>
                                 <th class="amount">Total HPP Bahan</th>
                                 <th class="amount">Total HPP Jasa (Print)</th>
                                 <th class="amount">Keuntungan</th>
-                                <th class="amount">Pengeluaran</th>
+                                <th class="amount">Pengeluaran<br><small>(tanpa penyesuaian saldo)</small></th>
                             </tr>
                         </thead>
                         <tbody>
                             <?php foreach ($monthly_profit as $row): ?>
                                 <tr>
                                     <td><?= esc($row['ym']) ?></td>
+                                    <td class="amount"><?= number_format($row['pesanan_count'] ?? 0, 0, ',', '.') ?></td>
                                     <td class="amount">Rp <?= number_format($row['total_harga'], 0, ',', '.') ?></td>
                                     <td class="amount deduction">
                                         Rp <?= number_format($row['hpp_bahan_usage'], 0, ',', '.') ?> / 

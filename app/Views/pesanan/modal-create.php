@@ -152,7 +152,7 @@
                         <span id="display-processing-fee">Rp 0</span>
                     </div>
                     <div class="price-row" id="promo-xtra-row" style="display: none;">
-                        <span>Promo Xtra (-4.5%):</span>
+                        <span>Promo + Gratis Ongkir Xtra (-8.5%):</span>
                         <span id="display-promo-xtra">Rp 0</span>
                     </div>
                     <div class="price-row" id="komisi-affiliate-row" style="display: none;">

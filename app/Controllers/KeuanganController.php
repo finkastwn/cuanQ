@@ -296,7 +296,9 @@ class KeuanganController extends BaseController
         $jumlah = $this->request->getPost('jumlah');
         $budgetSource = $this->request->getPost('budget_source') ?? '';
         $utangCategory = $this->request->getPost('utang_category') ?? '';
-        $kategori = $this->request->getPost('kategori') ?? 'manual';
+        $kategori = trim((string) ($this->request->getPost('kategori') ?? ''));
+
+        log_message('debug', '[KEUANGAN][store][raw_post] ' . json_encode($this->request->getPost()));
 
         if (empty($tanggal) || empty($keterangan) || empty($type) || empty($sourceMoney) || empty($jumlah)) {
             return $this->response->setJSON(['status' => 'error', 'message' => 'Semua field wajib diisi']);
@@ -312,7 +314,10 @@ class KeuanganController extends BaseController
             $kategori = $utangCategory;
         }
 
-        $validKategori = ['manual', 'pesanan', 'pembelian_bahan', 'manual_utang', 'pembayaran_utang'];
+        $rawKategoriPost = $this->request->getPost('kategori') ?? '';
+        log_message('debug', '[KEUANGAN][store] posted kategori=' . $rawKategoriPost . ', resolved=' . $kategori);
+
+        $validKategori = ['manual', 'penyesuaian_saldo', 'pesanan', 'pembelian_bahan', 'manual_utang', 'pembayaran_utang'];
         if (!in_array($kategori, $validKategori)) {
             $kategori = 'manual';
         }
@@ -340,7 +345,9 @@ class KeuanganController extends BaseController
             if ($inserted) {
                 return $this->response->setJSON([
                     'status' => 'success',
-                    'message' => 'Transaksi berhasil ditambah!'
+                    'message' => 'Transaksi berhasil ditambah!',
+                    'kategori' => $kategori,
+                    'raw_kategori' => $rawKategoriPost,
                 ]);
             } else {
                 return $this->response->setJSON(['status' => 'error', 'message' => 'Gagal menambah transaksi']);
@@ -360,7 +367,9 @@ class KeuanganController extends BaseController
         $jumlah = $this->request->getPost('jumlah');
         $budgetSource = $this->request->getPost('budget_source') ?? '';
         $utangCategory = $this->request->getPost('utang_category') ?? '';
-        $kategori = $this->request->getPost('kategori') ?? $existing['kategori'] ?? 'manual';
+        $kategori = trim((string) ($this->request->getPost('kategori') ?? ''));
+
+        log_message('debug', '[KEUANGAN][update][raw_post] ' . json_encode($this->request->getPost()));
 
         if (empty($id) || empty($tanggal) || empty($keterangan) || empty($type) || empty($sourceMoney) || empty($jumlah)) {
             return $this->response->setJSON(['status' => 'error', 'message' => 'Semua field wajib diisi']);
@@ -381,13 +390,18 @@ class KeuanganController extends BaseController
             $kategori = $utangCategory;
         }
 
-        // Validate kategori
-        $validKategori = ['manual', 'pesanan', 'pembelian_bahan', 'manual_utang', 'pembayaran_utang'];
+        if ($kategori === '') {
+            $kategori = $existing['kategori'] ?? 'manual';
+        }
+
+        $rawKategoriPost = $this->request->getPost('kategori') ?? '';
+        log_message('debug', '[KEUANGAN][update] posted kategori=' . $rawKategoriPost . ', resolved=' . $kategori . ', existing=' . ($existing['kategori'] ?? ''));
+
+        $validKategori = ['manual', 'penyesuaian_saldo', 'pesanan', 'pembelian_bahan', 'manual_utang', 'pembayaran_utang'];
         if (!in_array($kategori, $validKategori)) {
             $kategori = $existing['kategori'] ?? 'manual';
         }
 
-        // Validate budget_source if it's a pengeluaran and not an utang transaction
         if ($type === 'pengeluaran' && !empty($budgetSource) && !in_array($kategori, ['manual_utang', 'pembayaran_utang'])) {
             $validBudgetSources = ['hpp_bahan', 'hpp_jasa', 'keuntungan'];
             if (!in_array($budgetSource, $validBudgetSources)) {
