@@ -125,7 +125,7 @@
                 </div>
                 <div class="potongan-checkbox" style="margin-top: 10px;">
                     <input type="checkbox" id="promo_xtra" name="promo_xtra">
-                    <label for="promo_xtra" class="checkbox-label">Promo Xtra (-4.5%)</label>
+                    <label for="promo_xtra" class="checkbox-label">Promo + Gratis Ongkir Xtra(-8.5%)</label>
                 </div>
             </div>
             
@@ -700,7 +700,7 @@
             
             const biayaPemrosesan = biayaPotonganCheckbox.checked ? (1250 + getTotalBiayaTambahan()) : 0;
             
-            const promoXtraAmount = promoXtraCheckbox.checked ? (subtotal * 4.5) / 100 : 0;
+            const promoXtraAmount = promoXtraCheckbox.checked ? (subtotal * 8.5) / 100 : 0;
             
             const totalHarga = subtotal - totalBiayaAdmin - biayaPemrosesan - promoXtraAmount;
             
